@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "267892884533",
+    "project_id": "aiesec-lar-global",
+    "storage_bucket": "aiesec-lar-global.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:267892884533:android:a2a0cb95aac90b63c15d7c",
+        "android_client_info": {
+          "package_name": "com.example.aiesec_lar_global"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmAJzfky6BbdYQyKTe0plwp934JiYMeS4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
