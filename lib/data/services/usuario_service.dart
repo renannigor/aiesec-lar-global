@@ -7,6 +7,15 @@ class UsuarioService {
 
   final _usuariosRef = FirebaseCollections.usuarios;
 
+  Stream<Usuario?> getUsuarioStream({required String uid}) {
+    return _usuariosRef.doc(uid).snapshots().map((snapshot) {
+      if (snapshot.exists) {
+        return snapshot.data();
+      }
+      return null;
+    });
+  }
+
   Future<void> criarUsuario({required Usuario usuario}) async {
     await _usuariosRef.doc(usuario.uid).set(usuario);
   }

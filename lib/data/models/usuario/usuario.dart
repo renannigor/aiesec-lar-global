@@ -1,3 +1,4 @@
+import 'package:aiesec_lar_global/data/models/perfil_usuario.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'endereco.dart';
 import 'detalhes_hospedagem.dart';
@@ -36,7 +37,7 @@ class Usuario {
         nome: json['nome']! as String,
         fotoPerfilUrl: json['fotoPerfilUrl']! as String,
         criadoEm: (json['criadoEm']! as Timestamp).toDate(),
-        perfil: json['perfil']! as String,
+        perfil: _perfilFromString(json['perfil'] as String?),
         // Campos que podem ser nulos
         comiteLocalId: json['comiteLocalId'] as String?,
         dataNascimento: json['dataNascimento'] == null
@@ -70,7 +71,7 @@ class Usuario {
   final String nome;
   final String fotoPerfilUrl;
   final DateTime criadoEm;
-  final String perfil;
+  final PerfilUsuario perfil;
 
   // Campos opcionais (nullable)
   final String? comiteLocalId;
@@ -92,7 +93,7 @@ class Usuario {
       'nome': nome,
       'fotoPerfilUrl': fotoPerfilUrl,
       'criadoEm': Timestamp.fromDate(criadoEm),
-      'perfil': perfil,
+      'perfil': perfil.name,
       // Campos opcionais
       'comiteLocalId': comiteLocalId,
       'dataNascimento': dataNascimento == null
@@ -110,4 +111,15 @@ class Usuario {
       'expectativasIntercambista': expectativasIntercambista,
     };
   }
+}
+
+PerfilUsuario _perfilFromString(String? perfilString) {
+  if (perfilString == null) return PerfilUsuario.indefinido;
+
+  for (final perfil in PerfilUsuario.values) {
+    if (perfil.name == perfilString) {
+      return perfil;
+    }
+  }
+  return PerfilUsuario.indefinido;
 }

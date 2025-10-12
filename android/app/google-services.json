@@ -12,7 +12,20 @@
           "package_name": "com.example.aiesec_lar_global"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "267892884533-07v80a5pj4r24hkg5ti2l64bqa8kag5v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.aiesec_lar_global",
+            "certificate_hash": "73a7482842d6d51117f81ccf7904af51d63f64e2"
+          }
+        },
+        {
+          "client_id": "267892884533-rdep2tl60tpvl7pq35bs5pku07bnmnmv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAmAJzfky6BbdYQyKTe0plwp934JiYMeS4"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "267892884533-rdep2tl60tpvl7pq35bs5pku07bnmnmv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "267892884533-pgbhf7melekjbesindgeo35gmsmio1m6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.aiesecLarGlobal"
+              }
+            }
+          ]
         }
       }
     }
