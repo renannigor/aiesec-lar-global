@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../models/usuario/usuario.dart';
 import 'collection_references.dart';
 
@@ -6,6 +8,53 @@ class UsuarioService {
   static final instance = UsuarioService._();
 
   final _usuariosRef = FirebaseCollections.usuarios;
+
+  Future<int> getTotalUsuarios() async {
+    final countQuery = await _usuariosRef.count().get();
+    return countQuery.count ?? 0;
+  }
+
+  /// Busca paginada com Filtro por EMAIL
+  Future<List<QueryDocumentSnapshot<Usuario>>> getUsuariosPaginados({
+    required int limit,
+    DocumentSnapshot? startAfter,
+    String? buscaEmail,
+  }) async {
+    Query<Usuario> query = _usuariosRef;
+
+    // LÓGICA DE FILTRO POR EMAIL
+    if (buscaEmail != null && buscaEmail.isNotEmpty) {
+      // Importante: Firestore é case-sensitive.
+      // O ideal é salvar emails sempre minúsculos no banco e buscar minúsculo aqui.
+      final termo = buscaEmail.toLowerCase();
+
+      query = query
+          .orderBy('email') // Ordenação primária deve ser o campo do filtro
+          .where('email', isGreaterThanOrEqualTo: termo)
+          .where('email', isLessThan: '$termo\uf8ff');
+    } else {
+      // Ordenação padrão por nome se não houver busca
+      query = query.orderBy('nome');
+    }
+
+    // Paginação
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+
+    final querySnapshot = await query.limit(limit).get();
+    return querySnapshot.docs;
+  }
+
+  /// Retorna uma lista de TODOS os usuários para a tabela de gestão
+  Stream<List<Usuario>> getTodosUsuariosStream() {
+    return _usuariosRef
+        .orderBy('nome') // Opcional: ordenar por nome
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) => doc.data()).toList();
+        });
+  }
 
   Stream<Usuario?> getUsuarioStream({required String uid}) {
     return _usuariosRef.doc(uid).snapshots().map((snapshot) {
@@ -17,6 +66,7 @@ class UsuarioService {
   }
 
   Future<void> criarUsuario({required Usuario usuario}) async {
+    print('Criando usuário no Firestore: ${usuario.email}');
     await _usuariosRef.doc(usuario.uid).set(usuario);
   }
 

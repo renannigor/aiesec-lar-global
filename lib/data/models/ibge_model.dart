@@ -8,25 +8,85 @@ List<Estado> estadoFromJson(String str) =>
 List<Cidade> cidadeFromJson(String str) =>
     List<Cidade>.from(json.decode(str).map((x) => Cidade.fromJson(x)));
 
-/// Representa um Estado (UF) retornado pela API do IBGE.
 class Estado {
-  Estado({required this.id, required this.sigla, required this.nome});
-
   final int id;
   final String sigla;
   final String nome;
 
-  factory Estado.fromJson(Map<String, dynamic> json) =>
-      Estado(id: json["id"], sigla: json["sigla"], nome: json["nome"]);
+  Estado({required this.id, required this.sigla, required this.nome});
+
+  factory Estado.fromJson(Map<String, dynamic> json) {
+    return Estado(
+      id: json['id'],
+      sigla: json['sigla'],
+      nome: json['nome'],
+    );
+  }
 }
 
-/// Representa uma Cidade (Município) retornada pela API do IBGE.
 class Cidade {
-  Cidade({required this.id, required this.nome});
-
   final int id;
   final String nome;
 
-  factory Cidade.fromJson(Map<String, dynamic> json) =>
-      Cidade(id: json["id"], nome: json["nome"]);
+  Cidade({required this.id, required this.nome});
+
+  factory Cidade.fromJson(Map<String, dynamic> json) {
+    return Cidade(
+      id: json['id'],
+      nome: json['nome'],
+    );
+  }
+}
+
+class Distrito {
+  final int id;
+  final String nome;
+
+  Distrito({required this.id, required this.nome});
+
+  factory Distrito.fromJson(Map<String, dynamic> json) {
+    // Garante que o ID seja int, mesmo que a API mande string
+    return Distrito(
+      id: int.parse(json['id'].toString()), 
+      nome: json['nome'],
+    );
+  }
+}
+
+class Pais {
+  final int id;
+  final String nome;
+  final String sigla;
+
+  Pais({required this.id, required this.nome, required this.sigla});
+
+  factory Pais.fromJson(Map<String, dynamic> json) {
+    // --- LÓGICA DE PROTEÇÃO CONTRA O ERRO DE TIPO ---
+    
+    int idVal = 0;
+    String siglaVal = '';
+    String nomeVal = '';
+
+    // 1. Verifica o ID (Pode vir como int direto ou objeto com M49)
+    if (json['id'] is int) {
+      idVal = json['id'];
+    } else if (json['id'] is Map) {
+      idVal = json['id']['M49'] ?? 0;
+      siglaVal = json['id']['ISO-3166-1-ALPHA-2'] ?? '';
+    }
+
+    // 2. Verifica o NOME (Pode vir como String direto ou objeto com abreviado)
+    // O erro "String not subtype of int" acontecia aqui
+    if (json['nome'] is String) {
+      nomeVal = json['nome'];
+    } else if (json['nome'] is Map) {
+      nomeVal = json['nome']['abreviado'] ?? '';
+    }
+
+    return Pais(
+      id: idVal,
+      nome: nomeVal,
+      sigla: siglaVal,
+    );
+  }
 }

@@ -1,10 +1,11 @@
 class PreferenciasHospedagem {
   PreferenciasHospedagem({
     required this.restricaoFumantes,
-    required this.aceitaRestricaoAlimentar,
+    required this.aceitaRestricaoAlimentar, // "Sim, vegetarianos", "Não", etc.
     required this.preferenciaSexo,
     required this.preferenciaMeses,
     required this.preferenciaIdiomas,
+    this.outrosIdiomas,
   });
 
   PreferenciasHospedagem.fromJson(Map<String, dynamic> json)
@@ -18,6 +19,7 @@ class PreferenciasHospedagem {
         preferenciaIdiomas: List<String>.from(
           json['preferenciaIdiomas']! as List,
         ),
+        outrosIdiomas: json['outrosIdiomas'] as String?,
       );
 
   final bool restricaoFumantes;
@@ -25,6 +27,7 @@ class PreferenciasHospedagem {
   final String preferenciaSexo;
   final List<String> preferenciaMeses;
   final List<String> preferenciaIdiomas;
+  final String? outrosIdiomas;
 
   Map<String, dynamic> toJson() {
     return {
@@ -33,6 +36,7 @@ class PreferenciasHospedagem {
       'preferenciaSexo': preferenciaSexo,
       'preferenciaMeses': preferenciaMeses,
       'preferenciaIdiomas': preferenciaIdiomas,
+      if (outrosIdiomas != null) 'outrosIdiomas': outrosIdiomas,
     };
   }
 }

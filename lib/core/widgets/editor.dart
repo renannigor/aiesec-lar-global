@@ -6,11 +6,16 @@ class Editor extends StatefulWidget {
   final String labelText;
   final String? hintText;
   final IconData? prefixIcon;
+  final Widget? suffixIcon;
   final bool isPassword;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
   final List<TextInputFormatter>? inputFormatters;
   final void Function(String)? onChanged;
+
+  // NOVO: Necessário para detectar o "Enter" no teclado
+  final void Function(String)? onFieldSubmitted;
+
   final bool enabled;
 
   const Editor({
@@ -19,11 +24,13 @@ class Editor extends StatefulWidget {
     required this.labelText,
     this.hintText,
     this.prefixIcon,
+    this.suffixIcon,
     required this.isPassword,
     required this.keyboardType,
     this.validator,
     this.inputFormatters,
     this.onChanged,
+    this.onFieldSubmitted, // Adicione aqui no construtor
     required this.enabled,
   });
 
@@ -49,17 +56,18 @@ class _EditorState extends State<Editor> {
       validator: widget.validator,
       inputFormatters: widget.inputFormatters,
       onChanged: widget.onChanged,
+
+      // Conecta o callback aqui
+      onFieldSubmitted: widget.onFieldSubmitted,
+
       enabled: widget.enabled,
       decoration: InputDecoration(
         labelText: widget.labelText,
         hintText: widget.hintText,
         prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon) : null,
-        // Preenche o campo com uma cor cinza quando desabilitado
         filled: !widget.enabled,
         fillColor: Colors.grey.shade200,
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8.0)),
-        ),
+        border: const OutlineInputBorder(),
         suffixIcon: widget.isPassword
             ? IconButton(
                 icon: Icon(
@@ -71,7 +79,7 @@ class _EditorState extends State<Editor> {
                   });
                 },
               )
-            : null,
+            : widget.suffixIcon,
       ),
     );
   }

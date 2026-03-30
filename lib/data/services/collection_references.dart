@@ -1,3 +1,5 @@
+import 'package:aiesec_lar_global/data/models/oportunidade.dart';
+import 'package:aiesec_lar_global/data/models/podio_credentials_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/usuario/usuario.dart';
@@ -14,6 +16,17 @@ class FirebaseCollections {
 
   // --- Referências das Coleções ---
 
+  /// Referência para a coleção 'credenciaisApiPodio', já convertida para o model [PodioCredentialsModel].
+  static final CollectionReference<PodioCredentialsModel> credenciaisApiPodio =
+      _db
+          .collection('credenciaisApiPodio')
+          .withConverter<PodioCredentialsModel>(
+            fromFirestore: (snapshot, _) =>
+                PodioCredentialsModel.fromFirestore(snapshot.data()!),
+            toFirestore: (credencial, _) => credencial
+                .toJson(), 
+          );
+
   /// Referência para a coleção 'usuarios', já convertida para o model [Usuario].
   static final CollectionReference<Usuario> usuarios = _db
       .collection('usuarios')
@@ -26,8 +39,18 @@ class FirebaseCollections {
   static final CollectionReference<Intercambista> intercambistas = _db
       .collection('intercambistas')
       .withConverter<Intercambista>(
-        fromFirestore: (snapshot, _) => Intercambista.fromSnapshot(snapshot),
+        // Pegamos o data() garantindo que é um Map e passamos para o fromJson
+        fromFirestore: (snapshot, _) =>
+            Intercambista.fromJson(snapshot.data()!),
         toFirestore: (intercambista, _) => intercambista.toJson(),
+      );
+
+  /// Referência para a coleção 'oportunidades', convertida para o model [Oportunidade].
+  static final CollectionReference<Oportunidade> oportunidades = _db
+      .collection('oportunidades')
+      .withConverter<Oportunidade>(
+        fromFirestore: (snapshot, _) => Oportunidade.fromJson(snapshot.data()!),
+        toFirestore: (oportunidade, _) => oportunidade.toJson(),
       );
 
   /// Referência para a coleção 'comitesLocais', já convertida para o model [ComiteLocal].

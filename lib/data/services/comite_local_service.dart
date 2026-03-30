@@ -10,6 +10,17 @@ class ComiteLocalService {
 
   final _comitesRef = FirebaseCollections.comitesLocais;
 
+  /// READ (Stream): Retorna a lista de comitês em tempo real para o Grid
+  Stream<List<ComiteLocal>> getComitesStream() {
+    return _comitesRef.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => doc.data()).toList();
+    });
+  }
+  
+  Future<void> adicionarComiteLocal({required ComiteLocal comite}) async {
+    await _comitesRef.add(comite);
+  }
+
   Future<ComiteLocal?> getComiteLocal({required String comiteId}) async {
     final doc = await _comitesRef.doc(comiteId).get();
     return doc.data();

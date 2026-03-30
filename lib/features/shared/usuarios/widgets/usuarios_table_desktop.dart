@@ -1,0 +1,165 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:aiesec_lar_global/core/theme/app_colors.dart';
+import 'package:aiesec_lar_global/data/models/usuario/usuario.dart';
+import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+import 'dropdown_perfil.dart';
+import 'dropdown_comite.dart';
+import 'user_name_badge.dart';
+
+class UsuariosTableDesktop extends StatelessWidget {
+  final List<Usuario> usuarios;
+  final List<ComiteLocal> comites;
+  final String? currentUserId;
+  final Function(Usuario) onUpdateUser;
+  final bool isLoading;
+  final Widget? loadMoreButton;
+
+  const UsuariosTableDesktop({
+    super.key,
+    required this.usuarios,
+    required this.comites,
+    required this.currentUserId,
+    required this.onUpdateUser,
+    required this.isLoading,
+    this.loadMoreButton,
+  });
+
+  // Estilos Locais
+  final Color _headerBackground = const Color(0xFFF9FAFB);
+  final Color _borderColor = const Color(0xFFE5E7EB);
+  final TextStyle _headerTextStyle = const TextStyle(
+    color: Color(0xFF6B7280),
+    fontWeight: FontWeight.bold,
+    fontSize: 12,
+    letterSpacing: 0.5,
+  );
+  final TextStyle _cellTextStyle = const TextStyle(
+    color: Color(0xFF111827),
+    fontSize: 14,
+  );
+
+  String _formatDate(DateTime date) => DateFormat('dd/MM/yyyy').format(date);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: _borderColor),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          isLoading
+              ? const SizedBox(
+                  height: 200,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : usuarios.isEmpty
+              ? const SizedBox(
+                  height: 200,
+                  child: Center(child: Text("Nenhum usuário encontrado.")),
+                )
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    // Ajuste dinâmico de largura
+                    constraints: BoxConstraints(
+                      minWidth: MediaQuery.of(context).size.width - 64,
+                    ),
+                    child: DataTable(
+                      headingRowColor: WidgetStateProperty.all(
+                        _headerBackground,
+                      ),
+                      dividerThickness: 1,
+                      dataRowMinHeight: 60,
+                      dataRowMaxHeight: 60,
+                      columnSpacing: 40,
+                      horizontalMargin: 24,
+                      columns: [
+                        DataColumn(
+                          label: Text('USUÁRIO', style: _headerTextStyle),
+                        ),
+                        DataColumn(
+                          label: Text('EMAIL', style: _headerTextStyle),
+                        ),
+                        DataColumn(
+                          label: Text('TIPO', style: _headerTextStyle),
+                        ),
+                        DataColumn(
+                          label: Text('COMITÊ', style: _headerTextStyle),
+                        ),
+                        DataColumn(
+                          label: Text('DATA', style: _headerTextStyle),
+                        ),
+                      ],
+                      rows: usuarios.map((usuario) {
+                        return DataRow(
+                          cells: [
+                            DataCell(
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: AppColors.primary
+                                        .withValues(alpha: 0.1),
+                                    backgroundImage:
+                                        usuario.fotoPerfilUrl.isNotEmpty
+                                        ? NetworkImage(usuario.fotoPerfilUrl)
+                                        : null,
+                                    child: usuario.fotoPerfilUrl.isEmpty
+                                        ? Text(
+                                            usuario.nome.isNotEmpty
+                                                ? usuario.nome[0].toUpperCase()
+                                                : '?',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.primary,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  UserNameBadge(
+                                    usuario: usuario,
+                                    currentUserId: currentUserId,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            DataCell(
+                              Text(usuario.email, style: _cellTextStyle),
+                            ),
+                            DataCell(
+                              DropdownPerfil(
+                                usuario: usuario,
+                                onUpdate: onUpdateUser,
+                              ),
+                            ),
+                            DataCell(
+                              DropdownComite(
+                                usuario: usuario,
+                                comites: comites,
+                                onUpdate: onUpdateUser,
+                              ),
+                            ),
+                            DataCell(
+                              Text(
+                                _formatDate(usuario.criadoEm),
+                                style: _cellTextStyle,
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+          if (loadMoreButton != null) loadMoreButton!,
+        ],
+      ),
+    );
+  }
+}

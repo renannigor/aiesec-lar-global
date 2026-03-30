@@ -32,6 +32,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signUp({
     required String nome,
     required String email,
+    required String telefone,
     required String password,
     required String cep,
     required String logradouro,
@@ -39,6 +40,7 @@ class AuthProvider extends ChangeNotifier {
     required String bairro,
     required String estado,
     required String cidade,
+    required String comiteLocal,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -47,6 +49,7 @@ class AuthProvider extends ChangeNotifier {
       await _authService.signUp(
         nome: nome,
         email: email,
+        telefone: telefone,
         password: password,
         cep: cep,
         logradouro: logradouro,
@@ -54,6 +57,7 @@ class AuthProvider extends ChangeNotifier {
         bairro: bairro,
         cidade: cidade,
         estado: estado,
+        comiteLocal: comiteLocal,
       );
       SnackbarUtils.showSuccess('Cadastro realizado! Verifique seu e-mail.');
       _isLoading = false;
@@ -62,8 +66,16 @@ class AuthProvider extends ChangeNotifier {
     } on AuthException catch (e) {
       SnackbarUtils.showError(e.message);
       _isLoading = false;
+      print('Erro no cadastro: ${e.message}');
       notifyListeners();
       return false; // Falha
+    } catch (e) {
+      // CAPTURA DE ERRO GENÉRICO (Evita congelamento da tela)
+      SnackbarUtils.showError('Erro inesperado ao cadastrar. Tente novamente.');
+      _isLoading = false;
+      print('Erro inesperado no cadastro: $e');
+      notifyListeners();
+      return false;
     }
   }
 

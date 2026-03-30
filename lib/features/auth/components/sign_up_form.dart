@@ -2,11 +2,16 @@ import 'package:aiesec_lar_global/core/utils/snackbar.dart';
 import 'package:aiesec_lar_global/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:aiesec_lar_global/core/widgets/editor.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' hide Selector;
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/form_validators.dart';
 import '../../../data/services/viacep_service.dart';
+
+// --- NOVOS IMPORTS ---
+import 'package:aiesec_lar_global/core/widgets/selector.dart';
+import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 
 class SignUpForm extends StatefulWidget {
   final VoidCallback onSwitchToSignIn;
@@ -20,9 +25,10 @@ class SignUpForm extends StatefulWidget {
 class _SignUpFormState extends State<SignUpForm> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers para todos os campos do formulário
+  // Controllers
   final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
+  final _telefoneController = TextEditingController();
   final _cepController = TextEditingController();
   final _logradouroController = TextEditingController();
   final _numeroController = TextEditingController();
@@ -32,19 +38,59 @@ class _SignUpFormState extends State<SignUpForm> {
   final _senhaController = TextEditingController();
   final _confirmarSenhaController = TextEditingController();
 
-  bool _addressFieldsEnabled =
-      false; // Controla se os campos de endereço estão habilitados
+  bool _addressFieldsEnabled = false;
 
-  // Máscara para o campo de CEP
+  // --- VARIÁVEIS PARA O COMITÊ ---
+  String? _comiteSelecionado; // Vai guardar o nome ou ID do comitê
+  List<ComiteLocal> _listaComites = [];
+  bool _carregandoComites = true;
+
   final _cepMaskFormatter = MaskTextInputFormatter(
     mask: '#####-###',
     filter: {"#": RegExp(r'[0-9]')},
   );
 
+  final _phoneMaskFormatter = MaskTextInputFormatter(
+    mask: '(##) #####-####',
+    filter: {"#": RegExp(r'[0-9]')},
+    type: MaskAutoCompletionType.lazy,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _buscarComitesLocais();
+  }
+
+  // --- FUNÇÃO PARA BUSCAR OS COMITÊS ---
+  Future<void> _buscarComitesLocais() async {
+    try {
+      // Como o seu getComitesStream retorna um Stream, vamos pegar apenas o primeiro evento
+      // para preencher a lista de opções do dropdown.
+      final comites = await ComiteLocalService.instance
+          .getComitesStream()
+          .first;
+      if (mounted) {
+        setState(() {
+          // Filtra apenas os ativos (opcional) e ordena alfabeticamente
+          _listaComites = comites.where((c) => c.status == 'Ativo').toList()
+            ..sort((a, b) => a.nome.compareTo(b.nome));
+          _carregandoComites = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Erro ao carregar comitês: $e");
+      if (mounted) {
+        setState(() => _carregandoComites = false);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _nomeController.dispose();
     _emailController.dispose();
+    _telefoneController.dispose();
     _cepController.dispose();
     _logradouroController.dispose();
     _numeroController.dispose();
@@ -56,9 +102,7 @@ class _SignUpFormState extends State<SignUpForm> {
     super.dispose();
   }
 
-  /// Busca o endereço na API do ViaCEP e preenche os campos.
   Future<void> _buscarEnderecoPorCep(String cep) async {
-    // Só busca se o CEP estiver completo
     if (cep.replaceAll(RegExp(r'[^0-9]'), '').length != 8) return;
 
     final endereco = await ViaCepService.buscarCep(cep);
@@ -69,8 +113,7 @@ class _SignUpFormState extends State<SignUpForm> {
         _bairroController.text = endereco['bairro'] ?? '';
         _cidadeController.text = endereco['localidade'] ?? '';
         _ufController.text = endereco['uf'] ?? '';
-        setState(() => _addressFieldsEnabled = true); // Habilita os campos
-        // Foca no campo "Número" após preencher o endereço
+        setState(() => _addressFieldsEnabled = true);
         FocusScope.of(context).nextFocus();
       } else {
         SnackbarUtils.showError('CEP não encontrado ou inválido.');
@@ -79,21 +122,26 @@ class _SignUpFormState extends State<SignUpForm> {
     }
   }
 
-  /// Limpa os campos de endereço caso o CEP seja inválido ou apagado.
   void _clearAddressFields() {
     _logradouroController.clear();
     _bairroController.clear();
     _cidadeController.clear();
     _ufController.clear();
-    setState(() => _addressFieldsEnabled = false); // Desabilita os campos
+    setState(() => _addressFieldsEnabled = false);
   }
 
-  /// Valida o formulário e chama a lógica de cadastro.
   void _submitForm() {
     if (_formKey.currentState?.validate() ?? false) {
+      // Validação extra para o Comitê (já que ele não é um Editor com validator padrão)
+      if (_comiteSelecionado == null) {
+        SnackbarUtils.showError("Por favor, selecione a AIESEC mais próxima.");
+        return;
+      }
+
       context.read<AuthProvider>().signUp(
         nome: _nomeController.text.trim(),
         email: _emailController.text.trim(),
+        telefone: _telefoneController.text.trim(),
         password: _senhaController.text.trim(),
         cep: _cepController.text.trim(),
         logradouro: _logradouroController.text.trim(),
@@ -101,6 +149,7 @@ class _SignUpFormState extends State<SignUpForm> {
         bairro: _bairroController.text.trim(),
         cidade: _cidadeController.text.trim(),
         estado: _ufController.text.trim(),
+        comiteLocal: _comiteSelecionado!,
       );
     }
   }
@@ -162,6 +211,33 @@ class _SignUpFormState extends State<SignUpForm> {
             ),
             const SizedBox(height: 16),
             Editor(
+              controller: _telefoneController,
+              labelText: 'Telefone',
+              isPassword: false,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [_phoneMaskFormatter],
+              enabled: true,
+              validator: (value) =>
+                  FormValidators.notEmpty(value, fieldName: 'telefone'),
+            ),
+
+            // --- NOVO CAMPO: SELETOR DE COMITÊ ---
+            const SizedBox(height: 16),
+            _carregandoComites
+                ? const Center(child: CircularProgressIndicator())
+                : Selector<String>(
+                    labelText: 'AIESEC mais próxima',
+                    value: _comiteSelecionado,
+                    items: _listaComites.map((c) => c.nome).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _comiteSelecionado = val;
+                      });
+                    },
+                  ),
+
+            const SizedBox(height: 16),
+            Editor(
               controller: _cepController,
               labelText: 'CEP',
               keyboardType: TextInputType.number,
@@ -170,11 +246,9 @@ class _SignUpFormState extends State<SignUpForm> {
               validator: (value) =>
                   FormValidators.notEmpty(value, fieldName: 'CEP'),
               onChanged: (value) {
-                // Quando o CEP está completo (ex: 88000-000), a busca é disparada
                 if (value.length == 9) {
                   _buscarEnderecoPorCep(value);
                 } else {
-                  // Limpa os campos se o CEP for apagado
                   if (_addressFieldsEnabled) _clearAddressFields();
                 }
               },

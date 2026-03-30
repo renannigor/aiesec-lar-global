@@ -46,17 +46,31 @@ class _AuthDesktopUIState extends State<AuthDesktopUI> {
     return Scaffold(
       body: Row(
         children: [
-          // Painel da Esquerda (estático)
+          // Painel da Esquerda (estático e sem rolagem)
           const Expanded(child: AuthBrandingPanel()),
-          // Painel da Direita (dinâmico)
+
+          // Painel da Direita
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
               child: Column(
                 children: [
-                  const Spacer(),
-                  _buildForm(),
-                  const Spacer(),
+                  // A MÁGICA ACONTECE AQUI:
+                  // O Expanded faz a área de rolagem ocupar todo o espaço disponível
+                  // empurrando as logos sempre para o rodapé.
+                  Expanded(
+                    child: Center(
+                      child: SingleChildScrollView(
+                        // O padding garante que o formulário não cole nas bordas ao rolar
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: _buildForm(),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Rodapé fixo com as Logos
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -65,10 +79,7 @@ class _AuthDesktopUIState extends State<AuthDesktopUI> {
                         height: 60,
                       ),
                       const SizedBox(width: 48),
-                      Image.asset(
-                        'assets/image/aiesec_logo.png',
-                        height: 45,
-                      ),
+                      Image.asset('assets/image/aiesec_logo.png', height: 45),
                     ],
                   ),
                 ],
