@@ -1,6 +1,6 @@
 import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/features/super_admin/comite_local/comites_ui.dart';
-import 'package:aiesec_lar_global/features/shared/usuarios/usuarios_ui.dart';
+import 'package:aiesec_lar_global/features/super_admin/usuarios/usuarios_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:aiesec_lar_global/core/widgets/custom_header.dart';
 import 'package:aiesec_lar_global/core/widgets/responsive.dart';

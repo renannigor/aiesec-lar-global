@@ -39,13 +39,7 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
             padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // 1. ÁREA DAS LOGOS (Esquerda)
-                _buildLogos(isMobile),
-
-                // 2. BOTÃO DE MENU TIPO "PÍLULA" (Direita)
-                _buildUserMenu(context),
-              ],
+              children: [_buildLogos(isMobile), _buildUserMenu(context)],
             ),
           ),
         ),
@@ -62,7 +56,6 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
           fit: BoxFit.contain,
         ),
         const SizedBox(width: 16),
-        // Linha divisória combinando com o tom cinza claro do resto do cabeçalho
         Container(
           width: 1,
           height: isMobile ? 24 : 35,
@@ -86,9 +79,6 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
       tooltip: 'Menu do usuário',
       elevation: 4,
       onSelected: (value) async {
-        if (value == 'inicio') onNavigate(0);
-        if (value == 'interesses') onNavigate(1);
-        if (value == 'perfil') onNavigate(2);
         if (value == 'logout') {
           final sair = await showDialog<bool>(
             context: context,
@@ -126,16 +116,20 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
           if (sair == true && context.mounted) {
             await context.read<AuthProvider>().signOut();
           }
+        } else if (value == 'perfil') {
+          // O perfil sempre será o último índice após as abas normais
+          onNavigate(navItems.length);
+        } else {
+          // Navega para o índice correspondente da aba
+          onNavigate(int.parse(value));
         }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
-          // Borda fina (width: 1) e exatamente na mesma cor da linha debaixo do cabeçalho
           border: Border.all(color: Colors.grey.shade200, width: 1),
           borderRadius: BorderRadius.circular(30),
-          // Sombra removida para o visual flat!
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -150,34 +144,43 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
           ],
         ),
       ),
-      itemBuilder: (BuildContext context) => [
-        _buildMenuItem(
-          'inicio',
-          Icons.home_outlined,
-          'Início',
-          selectedIndex == 0,
-        ),
-        _buildMenuItem(
-          'interesses',
-          Icons.favorite_border,
-          'Meus Interesses',
-          selectedIndex == 1,
-        ),
-        _buildMenuItem(
-          'perfil',
-          Icons.person_outline,
-          'Meu Perfil',
-          selectedIndex == 2,
-        ),
-        const PopupMenuDivider(),
-        _buildMenuItem(
-          'logout',
-          Icons.logout,
-          'Sair',
-          false,
-          isDestructive: true,
-        ),
-      ],
+      itemBuilder: (BuildContext context) {
+        List<PopupMenuEntry<String>> menu = [];
+
+        // Adiciona as abas dinamicamente
+        for (var item in navItems) {
+          menu.add(
+            _buildMenuItem(
+              item.index.toString(),
+              Icons.label_outline, // Ícone genérico para as abas dinâmicas
+              item.title,
+              selectedIndex == item.index,
+            ),
+          );
+        }
+
+        // Adiciona Perfil e Sair no final
+        menu.add(const PopupMenuDivider());
+        menu.add(
+          _buildMenuItem(
+            'perfil',
+            Icons.person_outline,
+            'Meu Perfil',
+            selectedIndex == navItems.length,
+          ),
+        );
+        menu.add(
+          _buildMenuItem(
+            'logout',
+            Icons.logout,
+            'Sair',
+            false,
+            isDestructive: true,
+          ),
+        );
+
+        return menu;
+      },
     );
   }
 

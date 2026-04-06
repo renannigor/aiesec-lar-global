@@ -1,3 +1,5 @@
+import 'package:aiesec_lar_global/data/models/acesso_usuario.dart';
+import 'package:aiesec_lar_global/data/models/mensagem_rejeicao.dart';
 import 'package:aiesec_lar_global/data/models/oportunidade.dart';
 import 'package:aiesec_lar_global/data/models/podio_credentials_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -23,9 +25,16 @@ class FirebaseCollections {
           .withConverter<PodioCredentialsModel>(
             fromFirestore: (snapshot, _) =>
                 PodioCredentialsModel.fromFirestore(snapshot.data()!),
-            toFirestore: (credencial, _) => credencial
-                .toJson(), 
+            toFirestore: (credencial, _) => credencial.toJson(),
           );
+
+  /// Referência para a coleção 'acessos', já convertida para o model [AcessoUsuario].
+  static final CollectionReference<AcessoUsuario> acessos = _db
+      .collection('acessos')
+      .withConverter<AcessoUsuario>(
+        fromFirestore: (snapshot, _) => AcessoUsuario.fromSnapshot(snapshot),
+        toFirestore: (acesso, _) => acesso.toJson(),
+      );
 
   /// Referência para a coleção 'usuarios', já convertida para o model [Usuario].
   static final CollectionReference<Usuario> usuarios = _db
@@ -67,5 +76,13 @@ class FirebaseCollections {
       .withConverter<Aplicacao>(
         fromFirestore: (snapshot, _) => Aplicacao.fromSnapshot(snapshot),
         toFirestore: (aplicacao, _) => aplicacao.toJson(),
+      );
+
+  /// Referência para a coleção 'mensagensRejeicao', convertida para o model [MensagemRejeicao].
+  static final CollectionReference<MensagemRejeicao> mensagensRejeicao = _db
+      .collection('mensagensRejeicao')
+      .withConverter<MensagemRejeicao>(
+        fromFirestore: (snapshot, _) => MensagemRejeicao.fromSnapshot(snapshot),
+        toFirestore: (mensagem, _) => mensagem.toJson(),
       );
 }

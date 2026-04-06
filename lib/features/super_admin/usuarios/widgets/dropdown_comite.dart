@@ -4,6 +4,10 @@ import 'package:aiesec_lar_global/data/models/usuario/usuario.dart';
 import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
 import 'package:aiesec_lar_global/data/services/usuario_service.dart';
 
+// --- NOVOS IMPORTS DE ACESSO ---
+import 'package:aiesec_lar_global/data/models/acesso_usuario.dart';
+import 'package:aiesec_lar_global/data/services/acesso_service.dart';
+
 class DropdownComite extends StatelessWidget {
   final Usuario usuario;
   final List<ComiteLocal> comites;
@@ -55,7 +59,27 @@ class DropdownComite extends StatelessWidget {
 
           onChanged: (novoId) async {
             final atualizado = usuario.copyWith(comiteLocalId: novoId);
+
+            // 1. Atualiza na tabela visual de usuários
             await UsuarioService.instance.atualizarUsuario(usuario: atualizado);
+
+            // 2. Atualiza imediatamente o Comitê na tabela de Acessos
+            final papel = usuario.perfil.name.toLowerCase() == 'superadmin'
+                ? PapelAcesso.superadmin
+                : PapelAcesso.admin;
+
+            final acessoAtualizado = AcessoUsuario(
+              uid: usuario.uid,
+              papel: papel,
+              comiteGerenciado: novoId,
+              concedidoEm:
+                  DateTime.now(), // Atualiza a data da concessão do acesso
+            );
+            await AcessoService.instance.definirAcesso(
+              acesso: acessoAtualizado,
+            );
+
+            // 3. Atualiza na tela
             onUpdate(atualizado);
           },
         ),

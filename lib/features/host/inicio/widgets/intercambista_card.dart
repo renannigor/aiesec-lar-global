@@ -1,4 +1,5 @@
 import 'package:aiesec_lar_global/data/services/auth_service.dart';
+import 'package:aiesec_lar_global/features/host/components/detalhes_intercambista_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -14,7 +15,6 @@ import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/data/models/intercambista/intercambista.dart';
 
 // Importando a tela de detalhes para abri-la diretamente do card
-import 'package:aiesec_lar_global/features/host/components/detalhes_intercambista_sheet.dart';
 
 class IntercambistaCard extends StatefulWidget {
   final Intercambista intercambista;

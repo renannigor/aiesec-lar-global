@@ -6,10 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   // Garante que o Flutter está inicializado antes de chamar o Firebase
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Adicione esta linha:
+  await initializeDateFormatting('pt_BR', null);
+
   // Inicializa o Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 

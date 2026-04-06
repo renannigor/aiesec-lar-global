@@ -74,16 +74,33 @@ class PerfilDesktopUI extends StatelessWidget {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.grey.shade100,
-            backgroundImage: usuario.fotoPerfilUrl.isNotEmpty
-                ? NetworkImage(usuario.fotoPerfilUrl)
-                : null,
-            child: usuario.fotoPerfilUrl.isEmpty
-                ? Icon(Icons.person, size: 40, color: Colors.grey.shade400)
-                : null,
+          // --- AVATAR CORRIGIDO COM ERROR BUILDER ---
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: ClipOval(
+              child: usuario.fotoPerfilUrl.isNotEmpty
+                  ? Image.network(
+                      usuario.fotoPerfilUrl,
+                      fit: BoxFit.cover,
+                      // Se a imagem falhar por qualquer motivo (Erro 429, URL inválida, sem net), cai aqui:
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Colors.grey.shade400,
+                        );
+                      },
+                    )
+                  : Icon(Icons.person, size: 40, color: Colors.grey.shade400),
+            ),
           ),
+
+          // ------------------------------------------
           const SizedBox(height: 16),
           Text(
             usuario.nome,

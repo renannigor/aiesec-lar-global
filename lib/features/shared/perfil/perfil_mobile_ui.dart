@@ -39,19 +39,33 @@ class PerfilMobileUI extends StatelessWidget {
             ),
             child: Column(
               children: [
-                CircleAvatar(
-                  radius: 45,
-                  backgroundColor: Colors.grey.shade100,
-                  backgroundImage: usuario.fotoPerfilUrl.isNotEmpty
-                      ? NetworkImage(usuario.fotoPerfilUrl)
-                      : null,
-                  child: usuario.fotoPerfilUrl.isEmpty
-                      ? Icon(
-                          Icons.person,
-                          size: 45,
-                          color: Colors.grey.shade400,
-                        )
-                      : null,
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: ClipOval(
+                    child: usuario.fotoPerfilUrl.isNotEmpty
+                        ? Image.network(
+                            usuario.fotoPerfilUrl,
+                            fit: BoxFit.cover,
+                            // Captura falhas (ex: Erro 429) e exibe o ícone
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.person,
+                                size: 45,
+                                color: Colors.grey.shade400,
+                              );
+                            },
+                          )
+                        : Icon(
+                            Icons.person,
+                            size: 45,
+                            color: Colors.grey.shade400,
+                          ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(

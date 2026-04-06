@@ -94,6 +94,20 @@ class AplicacaoService {
     });
   }
 
+  /// ATUALIZAÇÃO DE STATUS E MOTIVO (MENSAGEM)
+  Future<void> atualizarRetornoAplicacao({
+    required String aplicacaoId,
+    required StatusAplicacao novoStatus,
+    String? motivo, // <-- Novo parâmetro opcional
+  }) async {
+    await _aplicacoesRef.doc(aplicacaoId).update({
+      'status': novoStatus.name,
+      'dataUltimaAtualizacao': Timestamp.now(),
+      if (motivo != null)
+        'mensagemHost': motivo, // Atualiza o motivo da rejeição
+    });
+  }
+
   /// DELETAR
   Future<void> deletarAplicacao({required String aplicacaoId}) async {
     await _aplicacoesRef.doc(aplicacaoId).delete();

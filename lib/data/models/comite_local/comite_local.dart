@@ -11,6 +11,8 @@ class ComiteLocal {
     required this.estado,
     this.status = 'Ativo',
     this.cnpj,
+    this.telefone,
+    this.email,
     this.dadosPresidente,
     this.endereco,
     this.testemunhas = const [],
@@ -27,6 +29,8 @@ class ComiteLocal {
         estado: json['estado'] as String,
         status: json['status'] as String? ?? 'Ativo',
         cnpj: json['cnpj'] as String?,
+        telefone: json['telefone'] as String?,
+        email: json['email'] as String?,
         dadosPresidente: json['dadosPresidente'] != null
             ? DadosPresidente.fromJson(
                 json['dadosPresidente'] as Map<String, dynamic>,
@@ -52,6 +56,8 @@ class ComiteLocal {
 
   // Campos Opcionais
   final String? cnpj;
+  final String? telefone;
+  final String? email;
   final DadosPresidente? dadosPresidente;
   final Endereco? endereco;
   final List<Testemunha> testemunhas;
@@ -68,6 +74,8 @@ class ComiteLocal {
 
     // Só adiciona os opcionais se eles existirem
     if (cnpj != null) data['cnpj'] = cnpj;
+    if (telefone != null) data['telefone'] = telefone;
+    if (email != null) data['email'] = email;
     if (dadosPresidente != null) {
       data['dadosPresidente'] = dadosPresidente!.toJson();
     }
