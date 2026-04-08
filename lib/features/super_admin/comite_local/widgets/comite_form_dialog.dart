@@ -125,6 +125,7 @@ class _ComiteFormContentState extends State<ComiteFormContent> {
         cidade: _selectedCidade!.nome,
         estado: _selectedEstado!.sigla,
         status: widget.comite?.status ?? 'Ativo',
+        nomePodio: _nomeController.text.trim().split(' ').last.toUpperCase(),
         testemunhas: widget.comite?.testemunhas ?? [],
         cnpj: widget.comite?.cnpj,
         dadosPresidente: widget.comite?.dadosPresidente,

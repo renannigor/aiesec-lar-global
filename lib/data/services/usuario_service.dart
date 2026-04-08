@@ -75,8 +75,22 @@ class UsuarioService {
     return doc.data();
   }
 
+  // --- ATUALIZAR USUÁRIO COM PRINTS DE DEBUG ---
   Future<void> atualizarUsuario({required Usuario usuario}) async {
-    await _usuariosRef.doc(usuario.uid).update(usuario.toJson());
+    try {
+      print('[DEBUG SERVICE] Preparando para atualizar UID: ${usuario.uid}');
+
+      final payload = usuario.toJson();
+      print('[DEBUG SERVICE] Payload que será enviado ao Firestore: $payload');
+
+      await _usuariosRef.doc(usuario.uid).update(payload);
+
+      print('[DEBUG SERVICE] Documento atualizado no Firestore com sucesso!');
+    } catch (e, stackTrace) {
+      print('[DEBUG SERVICE] ERRO NO FIRESTORE AO ATUALIZAR: $e');
+      print('[DEBUG SERVICE] StackTrace do Firestore: $stackTrace');
+      rethrow;
+    }
   }
 
   /// DELETAR: Remove o documento do usuário do Firestore.

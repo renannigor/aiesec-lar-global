@@ -185,6 +185,7 @@ class _ComiteUIState extends State<ComiteUI> {
         cidade: _comite!.cidade,
         estado: _comite!.estado,
         status: _comite!.status,
+        nomePodio: _comite!.nomePodio,
         cnpj: _cnpjCtrl.text.trim(),
         telefone: _telefoneCtrl.text.trim(),
         email: _emailCtrl.text.trim(),

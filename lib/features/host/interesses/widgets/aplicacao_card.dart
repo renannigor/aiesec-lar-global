@@ -1,3 +1,4 @@
+import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 import 'package:aiesec_lar_global/features/host/interesses/components/status_aplicacao_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +14,7 @@ import 'package:aiesec_lar_global/features/host/components/detalhes_intercambist
 
 // IMPORTAR A SUA CLASSE RESPONSIVE
 import 'package:aiesec_lar_global/core/widgets/responsive.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AplicacaoCard extends StatelessWidget {
   final Aplicacao aplicacao;
@@ -31,6 +33,44 @@ class AplicacaoCard extends StatelessWidget {
     }
   }
 
+  // --- FUNÇÃO PARA ABRIR O WHATSAPP ---
+  Future<void> _abrirWhatsAppComite(BuildContext context) async {
+    try {
+      SnackbarUtils.showInfo("Buscando contato do comitê...");
+
+      final comite = await ComiteLocalService.instance.getComitePorNomePodio(
+        aplicacao.comiteLocal,
+      );
+
+      if (comite == null ||
+          comite.telefone == null ||
+          comite.telefone!.isEmpty) {
+        SnackbarUtils.showError(
+          "O comitê não possui um número de telefone cadastrado.",
+        );
+        return;
+      }
+
+      // Remove tudo que não for número do telefone (ex: parênteses, espaços, traços)
+      final numeroLimpo = comite.telefone!.replaceAll(RegExp(r'[^0-9]'), '');
+
+      // Adiciona o código do Brasil (55) caso não tenha. Ajuste se houver comitês internacionais.
+      final numeroComCodigo = numeroLimpo.startsWith('55')
+          ? numeroLimpo
+          : '55$numeroLimpo';
+
+      final uri = Uri.parse('https://wa.me/$numeroComCodigo');
+
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        SnackbarUtils.showError("Não foi possível abrir o WhatsApp.");
+      }
+    } catch (e) {
+      SnackbarUtils.showError("Erro ao buscar contato: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final chegada = _formatarData(aplicacao.dataChegada);
@@ -45,7 +85,6 @@ class AplicacaoCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Nova Imagem com a Letra (Avatar)
             CircleAvatar(
               radius: 20,
               backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -103,54 +142,63 @@ class AplicacaoCard extends StatelessWidget {
           spacing: 24,
           runSpacing: 8,
           children: [
-            Text(
-              aplicacao.epPais,
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.flag_outlined, size: 16, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(
+                  aplicacao.epPais,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              "De: $chegada",
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.flight_land_outlined,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  "Chegada: $chegada",
+                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                ),
+              ],
             ),
-            Text(
-              "Até: $partida",
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.flight_takeoff_outlined,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  "Partida: $partida",
+                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                ),
+              ],
             ),
           ],
         ),
         const SizedBox(height: 24),
 
-        // --- RODAPÉ: ONG e Botões ---
-        if (isMobile) ...[
-          Text(
-            "ONG: ${aplicacao.ongNome ?? 'Não informada'}",
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
+        // --- RODAPÉ: Botões de Ação ---
+        if (isMobile)
+          SizedBox(width: double.infinity, child: _buildActionButtons(context))
+        else
+          Align(
+            alignment: Alignment.centerRight,
+            child: _buildActionButtons(context),
           ),
-          const SizedBox(height: 16),
-          SizedBox(width: double.infinity, child: _buildActionButtons(context)),
-        ] else ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Text(
-                  "ONG: ${aplicacao.ongNome ?? 'Não informada'}",
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              _buildActionButtons(context),
-            ],
-          ),
-        ],
       ],
     );
   }
@@ -233,12 +281,9 @@ class AplicacaoCard extends StatelessWidget {
       child: const Text("Ver Status"),
     );
 
-    // --- NOVO BOTÃO DE WHATSAPP ---
+    // --- BOTÃO DE WHATSAPP ---
     final btnWhatsApp = OutlinedButton.icon(
-      onPressed: () {
-        // TODO: Importar url_launcher para abrir o whatsapp aqui
-        SnackbarUtils.showInfo("Redirecionando para o WhatsApp...");
-      },
+      onPressed: () => _abrirWhatsAppComite(context),
       icon: const Icon(Icons.chat, size: 16),
       label: const Text("WhatsApp"),
       style: OutlinedButton.styleFrom(

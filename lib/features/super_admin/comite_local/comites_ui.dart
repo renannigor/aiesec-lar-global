@@ -231,6 +231,7 @@ class ComitesUI extends StatelessWidget {
         cidade: comite.cidade,
         estado: comite.estado,
         status: novoStatus,
+        nomePodio: comite.nomePodio,
         cnpj: comite.cnpj,
         dadosPresidente: comite.dadosPresidente,
         endereco: comite.endereco,

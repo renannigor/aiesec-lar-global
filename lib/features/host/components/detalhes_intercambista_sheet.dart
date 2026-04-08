@@ -1,64 +1,16 @@
-import 'package:aiesec_lar_global/data/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-// --- IMPORTS DO FIREBASE ---
-import 'package:aiesec_lar_global/data/models/aplicacao.dart';
-import 'package:aiesec_lar_global/data/services/aplicacao_service.dart';
-import 'package:aiesec_lar_global/core/utils/snackbar.dart';
-
+// --- IMPORTS CORE E DATA ---
 import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/data/models/intercambista/intercambista.dart';
 import 'package:aiesec_lar_global/data/models/oportunidade.dart';
 import 'package:aiesec_lar_global/data/services/oportunidade_service.dart';
 
-class DetalhesIntercambistaSheet extends StatefulWidget {
+class DetalhesIntercambistaSheet extends StatelessWidget {
   final Intercambista intercambista;
 
   const DetalhesIntercambistaSheet({super.key, required this.intercambista});
-
-  @override
-  State<DetalhesIntercambistaSheet> createState() =>
-      _DetalhesIntercambistaSheetState();
-}
-
-class _DetalhesIntercambistaSheetState
-    extends State<DetalhesIntercambistaSheet> {
-  bool _interesseDemonstrado = false;
-  bool _isLoading = true;
-  bool _isProcessing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _verificarInteresseAtivo();
-  }
-
-  Future<void> _verificarInteresseAtivo() async {
-    final user = AuthService.instance.currentUser;
-    if (user == null) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-
-    try {
-      final temInteresse = await AplicacaoService.instance
-          .jaDemonstrouInteresse(
-            hostUid: user.uid,
-            intercambistaId: widget.intercambista.epId,
-          );
-
-      if (mounted) {
-        setState(() {
-          _interesseDemonstrado = temInteresse;
-        });
-      }
-    } catch (e) {
-      debugPrint("Erro ao verificar status inicial: $e");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 
   String _formatDateString(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty || dateStr == 'Não informado') {
@@ -72,96 +24,9 @@ class _DetalhesIntercambistaSheetState
     }
   }
 
-  Future<void> _toggleInteresse() async {
-    if (_isProcessing) return;
-
-    final user = AuthService.instance.currentUser;
-    if (user == null) {
-      SnackbarUtils.showInfo(
-        "Você precisa estar logado para demonstrar interesse.",
-      );
-      return;
-    }
-
-    setState(() => _isProcessing = true);
-
-    final ep = widget.intercambista;
-    final hostUid = user.uid;
-
-    try {
-      // Puxa o registro (se existir)
-      final aplicacoes = await AplicacaoService.instance.getAplicacaoDoHost(
-        hostUid: hostUid,
-        intercambistaId: ep.epId,
-      );
-
-      if (aplicacoes.isEmpty) {
-        // CENÁRIO 1: Primeira vez! Não tem registro nenhum no banco.
-        final novaAplicacao = Aplicacao(
-          aplicacaoId:
-              '${hostUid}_${ep.epId}', // ID determinístico para evitar duplicação
-          hostUid: hostUid,
-          intercambistaId: ep.epId,
-          comiteLocal: ep.comite,
-          status: StatusAplicacao.pendente,
-          dataAplicacao: DateTime.now(),
-          dataUltimaAtualizacao: DateTime.now(),
-          epNome: ep.nome,
-          epPais: ep.pais ?? ep.entidadeAbroad,
-          dataChegada: ep.dataChegada ?? ep.dataRePresencial,
-          dataPartida: ep.dataPartida ?? ep.dataFinPresencial,
-        );
-
-        // Usando o método de salvar (upsert)
-        await AplicacaoService.instance.criarAplicacao(
-          aplicacao: novaAplicacao,
-        );
-
-        if (mounted) {
-          setState(() => _interesseDemonstrado = true);
-          SnackbarUtils.showSuccess("Interesse manifestado para ${ep.nome}!");
-        }
-      } else {
-        // Se a lista não é vazia, pegamos o único registro que existe lá.
-        final aplicacaoExistente = aplicacoes.first;
-
-        if (aplicacaoExistente.status == StatusAplicacao.cancelada) {
-          // CENÁRIO 2: Ele já tinha cancelado no passado. Vamos apenas RETOMAR.
-          await AplicacaoService.instance.atualizarStatusAplicacao(
-            aplicacaoId: aplicacaoExistente.aplicacaoId,
-            novoStatus: StatusAplicacao.pendente,
-          );
-
-          if (mounted) {
-            setState(() => _interesseDemonstrado = true);
-            SnackbarUtils.showSuccess("Interesse retomado para ${ep.nome}!");
-          }
-        } else {
-          // CENÁRIO 3: Ele está com interesse ativo (pendente, aprovado, etc). Vamos CANCELAR.
-          await AplicacaoService.instance.atualizarStatusAplicacao(
-            aplicacaoId: aplicacaoExistente.aplicacaoId,
-            novoStatus: StatusAplicacao.cancelada,
-          );
-
-          if (mounted) {
-            setState(() => _interesseDemonstrado = false);
-            SnackbarUtils.showInfo("Interesse removido para ${ep.nome}.");
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        SnackbarUtils.showInfo("Erro ao atualizar interesse.");
-      }
-      debugPrint("Erro: $e");
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final ep = widget.intercambista;
+    final ep = intercambista;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -391,62 +256,6 @@ class _DetalhesIntercambistaSheetState
                   ],
                 ),
               ],
-            ),
-          ),
-
-          // --- BOTÃO SUTIL (Amarelinho) ---
-          Tooltip(
-            message: _interesseDemonstrado
-                ? "Remover interesse"
-                : "Demonstrar interesse",
-            child: InkWell(
-              onTap: (_isLoading || _isProcessing) ? null : _toggleInteresse,
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: _interesseDemonstrado
-                      ? Colors.amber.shade50
-                      : Colors.transparent,
-                  border: Border.all(
-                    color: _interesseDemonstrado
-                        ? Colors.amber.shade600
-                        : Colors.grey.shade300,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    if (_isLoading || _isProcessing)
-                      const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    else
-                      Icon(
-                        _interesseDemonstrado
-                            ? Icons.other_houses
-                            : Icons.other_houses_outlined,
-                        color: _interesseDemonstrado
-                            ? Colors.amber.shade600
-                            : Colors.grey.shade600,
-                        size: 24,
-                      ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _interesseDemonstrado ? "Interesse Salvo" : "Hospedar",
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: _interesseDemonstrado
-                            ? Colors.amber.shade600
-                            : Colors.grey.shade500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
         ],

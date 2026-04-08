@@ -10,6 +10,7 @@ class ComiteLocal {
     required this.cidade,
     required this.estado,
     this.status = 'Ativo',
+    required this.nomePodio,
     this.cnpj,
     this.telefone,
     this.email,
@@ -28,6 +29,7 @@ class ComiteLocal {
         cidade: json['cidade'] as String,
         estado: json['estado'] as String,
         status: json['status'] as String? ?? 'Ativo',
+        nomePodio: json['nome_podio'] as String,
         cnpj: json['cnpj'] as String?,
         telefone: json['telefone'] as String?,
         email: json['email'] as String?,
@@ -53,6 +55,7 @@ class ComiteLocal {
   final String cidade;
   final String estado;
   final String status;
+  final String nomePodio;
 
   // Campos Opcionais
   final String? cnpj;
@@ -69,6 +72,7 @@ class ComiteLocal {
       'cidade': cidade,
       'estado': estado,
       'status': status,
+      'nome_podio': nomePodio,
       'testemunhas': testemunhas.map((t) => t.toJson()).toList(),
     };
 

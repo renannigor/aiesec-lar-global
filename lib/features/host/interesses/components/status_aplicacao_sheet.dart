@@ -9,8 +9,10 @@ class StatusAplicacaoSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isCancelada = aplicacao.status == StatusAplicacao.cancelada;
     final bool isRejeitada = aplicacao.status == StatusAplicacao.rejeitada;
+    final bool isConcluida = aplicacao.status == StatusAplicacao.concluida;
+    final String mensagem =
+        aplicacao.mensagemHost ?? "Nenhuma mensagem adicional fornecida.";
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -74,37 +76,93 @@ class StatusAplicacaoSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  if (isCancelada || isRejeitada)
+                  // --- MENSAGEM DE REJEIÇÃO COM O MOTIVO ---
+                  if (isRejeitada)
                     Container(
                       margin: const EdgeInsets.only(bottom: 32),
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.red.shade200),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.cancel_outlined,
-                            color: Colors.red.shade700,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              isCancelada
-                                  ? "Esta aplicação foi cancelada. Retome o interesse na aba 'Cancelados' se desejar continuar."
-                                  : "A candidatura para este intercambista não foi aprovada pelo comitê. Você pode aplicar para outras oportunidades disponíveis!",
-                              style: TextStyle(
-                                color: Colors.red.shade900,
-                                fontWeight: FontWeight.w600,
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.cancel_outlined,
+                                color: Colors.red.shade700,
                               ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  "Candidatura Não Aprovada",
+                                  style: TextStyle(
+                                    color: Colors.red.shade900,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            "Infelizmente o comitê decidiu não seguir com a sua candidatura para este intercambista. Veja o motivo abaixo:",
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // CAIXA DE TEXTO COM A VARIÁVEL 'mensagem'
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.shade100),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.format_quote,
+                                  size: 18,
+                                  color: Colors.red.shade300,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    mensagem, // <-- UTILIZADA AQUI!
+                                    style: TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      color: Colors.red.shade900,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+                          const Text(
+                            "Não desanime! Seu perfil continua ativo e você pode se candidatar para hospedar outros intercambistas na aba 'Início'.",
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     ),
 
+                  // --- TIMELINE VISUAL ---
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -119,9 +177,62 @@ class StatusAplicacaoSheet extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // CHAMAMOS O NOVO WIDGET AQUI:
                     child: AplicacaoTimeline(aplicacao: aplicacao),
                   ),
+
+                  // --- ALERTA DE EXPERIÊNCIA CONCLUÍDA ---
+                  if (isConcluida) ...[
+                    const SizedBox(height: 32),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade100,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.workspace_premium_outlined,
+                              color: Colors.green.shade700,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Parabéns pela experiência!",
+                                  style: TextStyle(
+                                    color: Colors.green.shade900,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Seu certificado de Família Global AIESEC já está disponível na aba 'Perfil'.",
+                                  style: TextStyle(
+                                    color: Colors.green.shade800,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 40),
                 ],
               ),

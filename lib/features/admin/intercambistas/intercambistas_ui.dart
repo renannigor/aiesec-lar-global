@@ -72,10 +72,8 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
               if (comiteSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              final comiteNome = comiteSnapshot.data?.nome
-                  .split(' ')
-                  .last
-                  .toUpperCase();
+              final comiteNome = comiteSnapshot.data?.nomePodio.toUpperCase();
+
               return _buildBody(comiteNome);
             },
           );

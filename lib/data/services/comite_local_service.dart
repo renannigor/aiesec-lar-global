@@ -16,7 +16,7 @@ class ComiteLocalService {
       return snapshot.docs.map((doc) => doc.data()).toList();
     });
   }
-  
+
   Future<void> adicionarComiteLocal({required ComiteLocal comite}) async {
     await _comitesRef.add(comite);
   }
@@ -24,6 +24,16 @@ class ComiteLocalService {
   Future<ComiteLocal?> getComiteLocal({required String comiteId}) async {
     final doc = await _comitesRef.doc(comiteId).get();
     return doc.data();
+  }
+
+  Future<ComiteLocal?> getComitePorNomePodio(String nomePodio) async {
+    final query = await _comitesRef
+        .where('nome_podio', isEqualTo: nomePodio)
+        .limit(1)
+        .get();
+
+    if (query.docs.isEmpty) return null;
+    return query.docs.first.data();
   }
 
   Future<void> atualizarComiteLocal({required ComiteLocal comite}) async {
