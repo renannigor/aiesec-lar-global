@@ -246,14 +246,14 @@ class _ComiteUIState extends State<ComiteUI> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Colors.white, // Fundo Branco
+        backgroundColor: Colors.white,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_comite == null) {
       return const Scaffold(
-        backgroundColor: Colors.white, // Fundo Branco
+        backgroundColor: Colors.white,
         body: Center(child: Text("Nenhum comitê vinculado à sua conta.")),
       );
     }
@@ -261,9 +261,42 @@ class _ComiteUIState extends State<ComiteUI> {
     final isMobile = Responsive.isMobile(context);
 
     return Scaffold(
-      backgroundColor: Colors.white, // Fundo Branco na base
+      backgroundColor: Colors.white,
+
+      // --- NOVO: FLOATING ACTION BUTTON ---
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isSaving ? null : _salvarAlteracoes,
+        backgroundColor: AppColors.primary,
+        elevation: 4,
+        icon: _isSaving
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : const Icon(Icons.save, color: Colors.white, size: 20),
+        label: Text(
+          _isSaving ? "Salvando..." : "Salvar Alterações",
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontSize: 15,
+          ),
+        ),
+      ),
+
+      // -------------------------------------
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(isMobile ? 16 : 32),
+        // Adicionado um padding extra (100) no bottom para o FAB não cobrir o conteúdo final
+        padding: EdgeInsets.fromLTRB(
+          isMobile ? 16 : 32,
+          isMobile ? 16 : 32,
+          isMobile ? 16 : 32,
+          100,
+        ),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1000),
@@ -286,7 +319,7 @@ class _ComiteUIState extends State<ComiteUI> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "Gerencie os dados institucionais da ${_comite!.nome}.",
+                        "Gerencie os dados institucionais da ${_comite!.nome} para o programa Lar Global.",
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ],
@@ -328,39 +361,55 @@ class _ComiteUIState extends State<ComiteUI> {
 
                   // 2. DADOS JURÍDICOS E CONTATO
                   _buildCardWrapper(
-                    title: "Dados Institucionais de Contato",
-                    child: _buildResponsiveRow(isMobile, [
-                      Editor(
-                        controller: _cnpjCtrl,
-                        labelText: "CNPJ",
-                        enabled: true,
-                        isPassword: false,
-                        keyboardType: TextInputType.text,
-                      ),
-                      Editor(
-                        controller: _emailCtrl,
-                        labelText: "E-mail Oficial",
-                        enabled: true,
-                        isPassword: false,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      Editor(
-                        controller: _telefoneCtrl,
-                        labelText: "Telefone",
-                        enabled: true,
-                        isPassword: false,
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [_phoneMaskFormatter],
-                      ),
-                    ]),
+                    title: "Dados Jurídicos e Contato (Lar Global)",
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "O telefone de contato será o canal principal com os Hosts. Cadastre o número do GH Manager responsável.",
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildResponsiveRow(isMobile, [
+                          Editor(
+                            controller: _cnpjCtrl,
+                            labelText: "CNPJ",
+                            enabled: true,
+                            isPassword: false,
+                            keyboardType: TextInputType.text,
+                          ),
+                          Editor(
+                            controller: _emailCtrl,
+                            labelText: "E-mail Oficial",
+                            enabled: true,
+                            isPassword: false,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          Editor(
+                            controller: _telefoneCtrl,
+                            labelText: "Telefone (GH Manager)",
+                            enabled: true,
+                            isPassword: false,
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [_phoneMaskFormatter],
+                          ),
+                        ]),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 24),
 
                   // 3. DADOS DO PRESIDENTE
                   _buildCardWrapper(
-                    title: "Dados do Representante Legal (Presidente)",
+                    title: "Representante Legal (Para Formulação de Contrato)",
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Text(
+                          "Os dados do Presidente são obrigatórios para a validade jurídica dos contratos gerados pelo sistema.",
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                        const SizedBox(height: 16),
                         _buildResponsiveRow(isMobile, [
                           Editor(
                             controller: _presNomeCtrl,
@@ -405,14 +454,14 @@ class _ComiteUIState extends State<ComiteUI> {
                         _buildResponsiveRow(isMobile, [
                           Editor(
                             controller: _presEmailCtrl,
-                            labelText: "E-mail",
+                            labelText: "E-mail do Presidente",
                             enabled: true,
                             isPassword: false,
                             keyboardType: TextInputType.emailAddress,
                           ),
                           Editor(
                             controller: _presTelefoneCtrl,
-                            labelText: "Telefone",
+                            labelText: "Telefone Pessoal",
                             enabled: true,
                             isPassword: false,
                             keyboardType: TextInputType.phone,
@@ -426,9 +475,15 @@ class _ComiteUIState extends State<ComiteUI> {
 
                   // 4. ENDEREÇO
                   _buildCardWrapper(
-                    title: "Endereço Físico",
+                    title: "Endereço Físico (Para Formulação de Contrato)",
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Text(
+                          "Este endereço constará no cabeçalho dos contratos como a sede da entidade.",
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                        const SizedBox(height: 16),
                         _buildResponsiveRow(isMobile, [
                           Editor(
                             controller: _endCepCtrl,
@@ -482,10 +537,16 @@ class _ComiteUIState extends State<ComiteUI> {
 
                   // 5. TESTEMUNHAS
                   _buildCardWrapper(
-                    title: "Testemunhas Cadastradas (Assinatura de Contratos)",
+                    title:
+                        "Testemunhas Cadastradas (Para Formulação de Contrato)",
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        const Text(
+                          "Adicione pelo menos 2 testemunhas (ex: membros do comitê) para compor a assinatura digital do contrato.",
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                        const SizedBox(height: 8),
                         if (_testemunhasAtuais.isEmpty)
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -568,33 +629,7 @@ class _ComiteUIState extends State<ComiteUI> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 40),
-
-                  // BOTÃO DE SALVAR GERAL
-                  SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isSaving ? null : _salvarAlteracoes,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2, // Leve destaque no botão principal
-                      ),
-                      child: _isSaving
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              "Salvar Alterações",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 40),
+                  // Removi o botão antigo gigante daqui!
                 ],
               ),
             ),
@@ -631,8 +666,6 @@ class _ComiteUIState extends State<ComiteUI> {
             ),
           ),
           const SizedBox(height: 16),
-          // Removido o Divider para um visual mais limpo
-          const SizedBox(height: 8),
           child,
         ],
       ),

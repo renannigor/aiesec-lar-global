@@ -20,9 +20,7 @@ void showCustomFormSheet({
     builder: (ctx) {
       // Padding para lidar com o teclado
       return Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: Container(
           // Garante fundo branco também no container interno
           decoration: const BoxDecoration(
@@ -49,21 +47,27 @@ void showCustomFormSheet({
 
               // 2. Cabeçalho
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 16, 16), // Ajustei padding direito
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  16,
+                  16,
+                  16,
+                ), // Ajustei padding direito
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // --- CORREÇÃO DO ERRO DE ESPAÇO ---
                     Expanded(
                       child: Text(
                         title,
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary, // Certifique-se que essa cor existe ou use Colors.black87
+                          color: AppColors
+                              .textPrimary, // Certifique-se que essa cor existe ou use Colors.black87
                         ),
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis, // Corta com "..." se for muito grande
+                        overflow: TextOverflow
+                            .ellipsis, // Corta com "..." se for muito grande
                       ),
                     ),
                     const SizedBox(width: 8), // Espaço entre texto e botão
@@ -96,7 +100,10 @@ void showCustomFormSheet({
                   border: Border(top: BorderSide(color: Colors.grey.shade200)),
                 ),
                 child: ElevatedButton(
-                  onPressed: onSave,
+                  onPressed: () async {
+                    onSave();
+                    Navigator.pop(context); 
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -108,7 +115,10 @@ void showCustomFormSheet({
                   ),
                   child: Text(
                     labelButton,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

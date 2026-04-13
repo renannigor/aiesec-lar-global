@@ -45,6 +45,9 @@ class UsuariosListMobile extends StatelessWidget {
           separatorBuilder: (ctx, i) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final usuario = usuarios[index];
+            final isMe =
+                usuario.uid == currentUserId; // <--- IDENTIFICA O LOGADO
+
             return Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -136,6 +139,7 @@ class UsuariosListMobile extends StatelessWidget {
                             DropdownPerfil(
                               usuario: usuario,
                               onUpdate: onUpdateUser,
+                              isDisabled: isMe, // <--- PASSA O BLOQUEIO
                             ),
                           ],
                         ),
@@ -156,6 +160,7 @@ class UsuariosListMobile extends StatelessWidget {
                               usuario: usuario,
                               comites: comites,
                               onUpdate: onUpdateUser,
+                              isDisabled: isMe, // <--- PASSA O BLOQUEIO
                             ),
                           ],
                         ),

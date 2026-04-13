@@ -57,11 +57,6 @@ class _FormPreferenciasState extends State<FormPreferencias> {
     outrosIdiomasController = TextEditingController(
       text: p.outrosIdiomas ?? "",
     );
-
-    // Força a sincronização dos valores padrão com o painel pai assim que a tela abre!
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _atualizar();
-    });
   }
 
   void _atualizar() {

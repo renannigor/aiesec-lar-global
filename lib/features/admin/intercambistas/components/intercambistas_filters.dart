@@ -6,10 +6,12 @@ class IntercambistasFilters extends StatelessWidget {
   final bool isMobile;
   final String? filtroStatus;
   final String filtroHospedagem;
+  final String? filtroArea; // NOVO
   final DateTime? filtroDataInicio;
   final DateTime? filtroDataTermino;
   final Function(String?) onStatusChanged;
   final Function(String?) onHospedagemChanged;
+  final Function(String?) onAreaChanged; // NOVO
   final Function(DateTime?, bool isInicio) onDateChanged;
   final VoidCallback onClear;
 
@@ -18,10 +20,12 @@ class IntercambistasFilters extends StatelessWidget {
     required this.isMobile,
     required this.filtroStatus,
     required this.filtroHospedagem,
+    required this.filtroArea, // NOVO
     required this.filtroDataInicio,
     required this.filtroDataTermino,
     required this.onStatusChanged,
     required this.onHospedagemChanged,
+    required this.onAreaChanged, // NOVO
     required this.onDateChanged,
     required this.onClear,
   });
@@ -43,6 +47,10 @@ class IntercambistasFilters extends StatelessWidget {
     final double fieldWidth = isMobile
         ? (MediaQuery.of(context).size.width / 2) - 24
         : 130;
+
+    // Aumentamos levemente a largura no desktop para caber "Estágio (Empresas)"
+    final double areaFieldWidth = isMobile ? fieldWidth : 150;
+
     const Color borderColor = Color(0xFFEAEAEA);
 
     final widgets = [
@@ -126,6 +134,54 @@ class IntercambistasFilters extends StatelessWidget {
           ],
         ),
       ),
+      // --- NOVO FILTRO DE ÁREA ---
+      SizedBox(
+        width: areaFieldWidth,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Área",
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: borderColor),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: filtroArea,
+                  hint: const Text("Todas", style: TextStyle(fontSize: 13)),
+                  isExpanded: true,
+                  icon: const Icon(Icons.keyboard_arrow_down, size: 16),
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  items: AppConstants.opcoesAreas
+                      .map(
+                        (area) => DropdownMenuItem<String>(
+                          value: area.value, // Salva o iGV/iGT
+                          child: Text(
+                            area.label,
+                            overflow: TextOverflow.ellipsis,
+                          ), // Mostra o Voluntário/Estágio
+                        ),
+                      )
+                      .toList(),
+                  onChanged: onAreaChanged,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      // ---------------------------
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -194,6 +250,7 @@ class IntercambistasFilters extends StatelessWidget {
       ),
       if (filtroStatus != null ||
           filtroHospedagem != 'Todos' ||
+          filtroArea != null ||
           filtroDataInicio != null ||
           filtroDataTermino != null)
         Column(

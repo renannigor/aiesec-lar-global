@@ -1,5 +1,6 @@
 import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/features/super_admin/comite_local/comites_ui.dart';
+import 'package:aiesec_lar_global/features/super_admin/dashboard/dashboard_ui.dart';
 import 'package:aiesec_lar_global/features/super_admin/usuarios/usuarios_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:aiesec_lar_global/core/widgets/custom_header.dart';
@@ -19,8 +20,9 @@ class _SuperAdminUIState extends State<SuperAdminUI> {
 
   // Itens de navegação do Header (Desktop)
   final List<NavigationItem> _navItems = const [
-    NavigationItem(title: 'Usuários', index: 0),
-    NavigationItem(title: 'Comitês Locais', index: 1),
+    NavigationItem(title: 'Dashboard', index: 0),
+    NavigationItem(title: 'Usuários', index: 1),
+    NavigationItem(title: 'Comitês Locais', index: 2),
   ];
 
   // Função para atualizar a tela exibida
@@ -34,9 +36,10 @@ class _SuperAdminUIState extends State<SuperAdminUI> {
   Widget build(BuildContext context) {
     // Lista das telas que serão exibidas
     final List<Widget> screens = [
-      const UsuariosUI(), // Index 0: Gestão de Usuários
-      const ComitesUI(), // Index 1: Gestão de Comitês
-      const PerfilUI(), // Index 2: Perfil (Reutilizando a tela existente)
+      const DashboardUI(), // Index 0: Dashboard
+      const UsuariosUI(), // Index 1: Gestão de Usuários
+      const ComitesUI(), // Index 2: Gestão de Comitês
+      const PerfilUI(), // Index 3: Perfil (Reutilizando a tela existente)
     ];
 
     return Scaffold(

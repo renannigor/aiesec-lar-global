@@ -25,15 +25,12 @@ class UsuariosTableDesktop extends StatelessWidget {
     this.loadMoreButton,
   });
 
-  // Estilos Locais
-  final Color _headerBackground = const Color(0xFFF9FAFB);
-  final Color _borderColor = const Color(0xFFE5E7EB);
   final TextStyle _headerTextStyle = const TextStyle(
     color: Color(0xFF6B7280),
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w600,
     fontSize: 12,
-    letterSpacing: 0.5,
   );
+
   final TextStyle _cellTextStyle = const TextStyle(
     color: Color(0xFF111827),
     fontSize: 14,
@@ -43,123 +40,182 @@ class UsuariosTableDesktop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: _borderColor),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          isLoading
-              ? const SizedBox(
-                  height: 200,
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              : usuarios.isEmpty
-              ? const SizedBox(
-                  height: 200,
-                  child: Center(child: Text("Nenhum usuário encontrado.")),
-                )
-              : SingleChildScrollView(
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFEAEAEA)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Limite mínimo para não espremer muito no desktop pequeno
+              final double minTableWidth = constraints.maxWidth > 900
+                  ? constraints.maxWidth
+                  : 900;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    // Ajuste dinâmico de largura
-                    constraints: BoxConstraints(
-                      minWidth: MediaQuery.of(context).size.width - 64,
-                    ),
-                    child: DataTable(
-                      headingRowColor: WidgetStateProperty.all(
-                        _headerBackground,
-                      ),
-                      dividerThickness: 1,
-                      dataRowMinHeight: 60,
-                      dataRowMaxHeight: 60,
-                      columnSpacing: 40,
-                      horizontalMargin: 24,
-                      columns: [
-                        DataColumn(
-                          label: Text('USUÁRIO', style: _headerTextStyle),
-                        ),
-                        DataColumn(
-                          label: Text('EMAIL', style: _headerTextStyle),
-                        ),
-                        DataColumn(
-                          label: Text('TIPO', style: _headerTextStyle),
-                        ),
-                        DataColumn(
-                          label: Text('COMITÊ', style: _headerTextStyle),
-                        ),
-                        DataColumn(
-                          label: Text('DATA', style: _headerTextStyle),
-                        ),
-                      ],
-                      rows: usuarios.map((usuario) {
-                        return DataRow(
-                          cells: [
-                            DataCell(
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 16,
-                                    backgroundColor: AppColors.primary
-                                        .withValues(alpha: 0.1),
-                                    backgroundImage:
-                                        usuario.fotoPerfilUrl.isNotEmpty
-                                        ? NetworkImage(usuario.fotoPerfilUrl)
-                                        : null,
-                                    child: usuario.fotoPerfilUrl.isEmpty
-                                        ? Text(
-                                            usuario.nome.isNotEmpty
-                                                ? usuario.nome[0].toUpperCase()
-                                                : '?',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.primary,
-                                            ),
-                                          )
-                                        : null,
+                    constraints: BoxConstraints(minWidth: minTableWidth),
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 200,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          )
+                        : usuarios.isEmpty
+                        ? const SizedBox(
+                            height: 200,
+                            child: Center(
+                              child: Text("Nenhum usuário encontrado."),
+                            ),
+                          )
+                        : DataTable(
+                            headingRowColor: WidgetStateProperty.all(
+                              Colors.white,
+                            ),
+                            dividerThickness: 1,
+                            dataRowMinHeight: 65,
+                            dataRowMaxHeight: 65,
+                            columnSpacing: 24,
+                            horizontalMargin: 24,
+                            columns: [
+                              DataColumn(
+                                label: SizedBox(
+                                  width: minTableWidth * 0.25, // 25% da tela
+                                  child: Text(
+                                    'USUÁRIO',
+                                    style: _headerTextStyle,
                                   ),
-                                  const SizedBox(width: 12),
-                                  UserNameBadge(
-                                    usuario: usuario,
-                                    currentUserId: currentUserId,
+                                ),
+                              ),
+                              DataColumn(
+                                label: SizedBox(
+                                  width: minTableWidth * 0.25, // 25% da tela
+                                  child: Text('EMAIL', style: _headerTextStyle),
+                                ),
+                              ),
+                              DataColumn(
+                                label: SizedBox(
+                                  width: minTableWidth * 0.15, // 15% da tela
+                                  child: Text('TIPO', style: _headerTextStyle),
+                                ),
+                              ),
+                              DataColumn(
+                                label: SizedBox(
+                                  width: minTableWidth * 0.20, // 20% da tela
+                                  child: Text(
+                                    'COMITÊ',
+                                    style: _headerTextStyle,
+                                  ),
+                                ),
+                              ),
+                              DataColumn(
+                                label: SizedBox(
+                                  width: minTableWidth * 0.15, // 15% da tela
+                                  child: Text('DATA', style: _headerTextStyle),
+                                ),
+                              ),
+                            ],
+                            rows: usuarios.map((usuario) {
+                              // --- TRAVA DE SEGURANÇA ---
+                              final isMe = usuario.uid == currentUserId;
+
+                              return DataRow(
+                                cells: [
+                                  DataCell(
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor: AppColors.primary
+                                              .withValues(alpha: 0.1),
+                                          backgroundImage:
+                                              usuario.fotoPerfilUrl.isNotEmpty
+                                              ? NetworkImage(
+                                                  usuario.fotoPerfilUrl,
+                                                )
+                                              : null,
+                                          child: usuario.fotoPerfilUrl.isEmpty
+                                              ? Text(
+                                                  usuario.nome.isNotEmpty
+                                                      ? usuario.nome[0]
+                                                            .toUpperCase()
+                                                      : '?',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: AppColors.primary,
+                                                    fontSize: 12,
+                                                  ),
+                                                )
+                                              : null,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: UserNameBadge(
+                                            usuario: usuario,
+                                            currentUserId: currentUserId,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      usuario.email,
+                                      style: _cellTextStyle,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  DataCell(
+                                    DropdownPerfil(
+                                      usuario: usuario,
+                                      onUpdate: onUpdateUser,
+                                      isDisabled: isMe, // Passa o bloqueio
+                                    ),
+                                  ),
+                                  DataCell(
+                                    DropdownComite(
+                                      usuario: usuario,
+                                      comites: comites,
+                                      onUpdate: onUpdateUser,
+                                      isDisabled: isMe, // Passa o bloqueio
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      _formatDate(usuario.criadoEm),
+                                      style: _cellTextStyle,
+                                    ),
                                   ),
                                 ],
-                              ),
-                            ),
-                            DataCell(
-                              Text(usuario.email, style: _cellTextStyle),
-                            ),
-                            DataCell(
-                              DropdownPerfil(
-                                usuario: usuario,
-                                onUpdate: onUpdateUser,
-                              ),
-                            ),
-                            DataCell(
-                              DropdownComite(
-                                usuario: usuario,
-                                comites: comites,
-                                onUpdate: onUpdateUser,
-                              ),
-                            ),
-                            DataCell(
-                              Text(
-                                _formatDate(usuario.criadoEm),
-                                style: _cellTextStyle,
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
+                              );
+                            }).toList(),
+                          ),
                   ),
                 ),
-          if (loadMoreButton != null) loadMoreButton!,
-        ],
-      ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 24),
+        if (loadMoreButton != null) loadMoreButton!,
+      ],
     );
   }
 }

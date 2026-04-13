@@ -1,3 +1,5 @@
+import 'package:aiesec_lar_global/data/models/area_filtro.dart';
+
 class AppConstants {
   // Construtor privado para evitar que a classe seja instanciada por engano
   AppConstants._();
@@ -18,10 +20,13 @@ class AppConstants {
   ];
 
   // --- FILTROS GENÉRICOS ---
-  static const List<String> filtroSimNao = [
-    'Todos',
-    'Sim',
-    'Não',
+  static const List<String> filtroSimNao = ['Todos', 'Sim', 'Não'];
+
+  // --- ÁREAS (NOVO) ---
+  static final List<AreaFiltro> opcoesAreas = [
+    AreaFiltro(label: "Voluntário", value: "iGV"),
+    AreaFiltro(label: "Estágio (Empresas)", value: "iGTa"),
+    AreaFiltro(label: "Estágio (Ensino)", value: "iGTe"),
   ];
 
   // --- TABELA PAGINADA ---

@@ -1,3 +1,4 @@
+import 'package:aiesec_lar_global/data/models/area_filtro.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -11,6 +12,7 @@ import 'widgets/intercambista_card.dart';
 import 'inicio_constantes.dart';
 
 import 'package:aiesec_lar_global/core/widgets/responsive.dart';
+import 'package:aiesec_lar_global/core/widgets/selector.dart'; // <-- IMPORT DO SEU SELECTOR
 
 class InicioUI extends StatefulWidget {
   final VoidCallback onIrParaPerfil;
@@ -30,6 +32,7 @@ class _InicioUIState extends State<InicioUI> {
   String? _entidadeSelecionada;
   String? _comiteSelecionado;
   String? _filtroAcomodacao;
+  String? _areaSelecionada;
   DateTimeRange? _periodoChegada;
 
   int _quantidadeExibida = 6;
@@ -77,6 +80,7 @@ class _InicioUIState extends State<InicioUI> {
       _entidadeSelecionada = null;
       _comiteSelecionado = null;
       _filtroAcomodacao = null;
+      _areaSelecionada = null;
       _periodoChegada = null;
       _quantidadeExibida = 6;
     });
@@ -140,6 +144,11 @@ class _InicioUIState extends State<InicioUI> {
               return false;
             }
             if (_comiteSelecionado != null && i.comite != _comiteSelecionado) {
+              return false;
+            }
+
+            // FILTRO DE ÁREA
+            if (_areaSelecionada != null && i.area != _areaSelecionada) {
               return false;
             }
 
@@ -217,7 +226,7 @@ class _InicioUIState extends State<InicioUI> {
                                 ),
                                 const SizedBox(height: 8),
                                 const Text(
-                                  "Encontre o intercambista ideal filtrando por comitê, entidade e período de chegada.",
+                                  "Encontre o intercambista ideal filtrando por comitê, área de atuação e país de origem.",
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: Colors.grey,
@@ -238,34 +247,82 @@ class _InicioUIState extends State<InicioUI> {
                                   alignment: WrapAlignment.center,
                                   crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
-                                    _buildDropdownSimple(
-                                      label: "Entidade (País)",
-                                      value: _entidadeSelecionada,
-                                      items: entidadesDisponiveis,
-                                      onChanged: (val) => setState(() {
-                                        _entidadeSelecionada = val;
-                                        _quantidadeExibida = 6;
-                                      }),
-                                    ),
-                                    _buildDropdownSimple(
-                                      label: "Comitê AIESEC",
-                                      value: _comiteSelecionado,
-                                      items: comitesDisponiveis,
-                                      onChanged: (val) => setState(() {
-                                        _comiteSelecionado = val;
-                                        _quantidadeExibida = 6;
-                                      }),
-                                    ),
-                                    _buildDropdownSimple(
-                                      label: "Precisa acomodação?",
-                                      value: _filtroAcomodacao,
-                                      items: InicioConstantes.filtroAcomodacao,
-                                      onChanged: (val) => setState(() {
-                                        _filtroAcomodacao = val;
-                                        _quantidadeExibida = 6;
-                                      }),
+                                    // 1. FILTRO PAÍS
+                                    SizedBox(
+                                      width: 220,
+                                      child: Selector<String>(
+                                        labelText:
+                                            "Países com intercambistas agora",
+                                        value: _entidadeSelecionada,
+                                        items: entidadesDisponiveis,
+                                        onChanged: (val) => setState(() {
+                                          _entidadeSelecionada = val;
+                                          _quantidadeExibida = 6;
+                                        }),
+                                        isFilter: true,
+                                      ),
                                     ),
 
+                                    // 2. FILTRO COMITÊ
+                                    SizedBox(
+                                      width: 220,
+                                      child: Selector<String>(
+                                        labelText: "Comitês recebendo agora",
+                                        value: _comiteSelecionado,
+                                        items: comitesDisponiveis,
+                                        onChanged: (val) => setState(() {
+                                          _comiteSelecionado = val;
+                                          _quantidadeExibida = 6;
+                                        }),
+                                        isFilter: true,
+                                      ),
+                                    ),
+
+                                    // 3. FILTRO DE ÁREA (COM SEU ITEM LABEL BUILDER)
+                                    SizedBox(
+                                      width: 220,
+                                      child: Selector<AreaFiltro>(
+                                        labelText: "Tipo de Intercâmbio",
+                                        // Recuperamos o objeto AreaFiltro baseado na string salva
+                                        value: _areaSelecionada != null
+                                            ? InicioConstantes.opcoesAreas
+                                                  .firstWhere(
+                                                    (a) =>
+                                                        a.value ==
+                                                        _areaSelecionada,
+                                                    orElse: () =>
+                                                        InicioConstantes
+                                                            .opcoesAreas
+                                                            .first,
+                                                  )
+                                            : null,
+                                        items: InicioConstantes.opcoesAreas,
+                                        itemLabelBuilder: (area) => area.label,
+                                        onChanged: (val) => setState(() {
+                                          _areaSelecionada = val?.value;
+                                          _quantidadeExibida = 6;
+                                        }),
+                                        isFilter: true,
+                                      ),
+                                    ),
+
+                                    // 4. FILTRO ACOMODAÇÃO
+                                    SizedBox(
+                                      width: 220,
+                                      child: Selector<String>(
+                                        labelText: "Precisa acomodação?",
+                                        value: _filtroAcomodacao,
+                                        items:
+                                            InicioConstantes.filtroAcomodacao,
+                                        onChanged: (val) => setState(() {
+                                          _filtroAcomodacao = val;
+                                          _quantidadeExibida = 6;
+                                        }),
+                                        isFilter: true,
+                                      ),
+                                    ),
+
+                                    // 5. FILTRO DE DATAS (Mantém o visual customizado)
                                     InkWell(
                                       onTap: _escolherPeriodo,
                                       borderRadius: BorderRadius.circular(4),
@@ -278,7 +335,7 @@ class _InicioUIState extends State<InicioUI> {
                                           border: Border.all(
                                             color: _periodoChegada != null
                                                 ? Colors.blue
-                                                : Colors.grey.shade300,
+                                                : Colors.grey.shade400,
                                           ),
                                           borderRadius: BorderRadius.circular(
                                             4,
@@ -287,7 +344,7 @@ class _InicioUIState extends State<InicioUI> {
                                               ? Colors.blue.shade50
                                               : Colors.transparent,
                                         ),
-                                        width: 180,
+                                        width: 220,
                                         child: Row(
                                           children: [
                                             Icon(
@@ -295,7 +352,7 @@ class _InicioUIState extends State<InicioUI> {
                                               size: 16,
                                               color: _periodoChegada != null
                                                   ? Colors.blue
-                                                  : Colors.grey,
+                                                  : Colors.grey.shade700,
                                             ),
                                             const SizedBox(width: 8),
                                             Expanded(
@@ -307,7 +364,7 @@ class _InicioUIState extends State<InicioUI> {
                                                   fontSize: 14,
                                                   color: _periodoChegada != null
                                                       ? Colors.blue.shade700
-                                                      : Colors.black87,
+                                                      : Colors.grey.shade700,
                                                   fontWeight:
                                                       _periodoChegada != null
                                                       ? FontWeight.bold
@@ -341,7 +398,7 @@ class _InicioUIState extends State<InicioUI> {
                             child: Text(
                               isLoadingData
                                   ? "Carregando..."
-                                  : "${listaFiltrada.length} encontrados",
+                                  : "${listaFiltrada.length} intercambistas encontrados",
                               style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 12,
@@ -394,7 +451,6 @@ class _InicioUIState extends State<InicioUI> {
                                   itemCount: listaPaginada.length,
                                   itemBuilder: (context, index) {
                                     final ep = listaPaginada[index];
-
                                     return IntercambistaCard(
                                       intercambista: ep,
                                       onInteresseSalvo:
@@ -433,7 +489,6 @@ class _InicioUIState extends State<InicioUI> {
                                           ),
                                         ),
                                       ),
-
                                     if (listaFiltrada.length >
                                         _quantidadeExibida)
                                       const SizedBox(height: 16),
@@ -480,46 +535,6 @@ class _InicioUIState extends State<InicioUI> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildDropdownSimple({
-    required String label,
-    required String? value,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      width: 180,
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          hint: Text(
-            label,
-            style: const TextStyle(fontSize: 14),
-            overflow: TextOverflow.ellipsis,
-          ),
-          isExpanded: true,
-          items: items
-              .map(
-                (String item) => DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(
-                    item,
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: onChanged,
-        ),
       ),
     );
   }

@@ -35,6 +35,7 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
   // Filtros
   String? _filtroStatus;
   String _filtroHospedagem = 'Todos';
+  String? _filtroArea; // NOVO
   DateTime? _filtroDataInicio;
   DateTime? _filtroDataTermino;
 
@@ -53,11 +54,12 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Fundo Totalmente Branco
+      backgroundColor: Colors.white,
       body: StreamBuilder<AcessoUsuario?>(
         stream: AcessoService.instance.getAcessoStream(uid: _uid),
         builder: (context, acessoSnapshot) {
-          if (acessoSnapshot.connectionState == ConnectionState.waiting) {
+          if (acessoSnapshot.connectionState == ConnectionState.waiting &&
+              !acessoSnapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -88,7 +90,8 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
     return StreamBuilder<List<Intercambista>>(
       stream: IntercambistaService.instance.getIntercambistasStream(),
       builder: (context, epSnapshot) {
-        if (epSnapshot.connectionState == ConnectionState.waiting) {
+        if (epSnapshot.connectionState == ConnectionState.waiting &&
+            !epSnapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -103,21 +106,31 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
               _filtroStatus == null ||
               _filtroStatus == 'Todos' ||
               i.status.toLowerCase() == _filtroStatus!.toLowerCase();
+
           bool matchHospedagem =
               _filtroHospedagem == 'Todos' ||
               (_filtroHospedagem == 'Sim' && i.precisaHospedagem) ||
               (_filtroHospedagem == 'Não' && !i.precisaHospedagem);
+
+          // NOVO: Lógica do filtro de área
+          bool matchArea = _filtroArea == null || i.area == _filtroArea;
+
           DateTime? dtInicioPodio = DateTime.tryParse(i.dataRePresencial);
           bool matchInicio =
               _filtroDataInicio == null ||
               (dtInicioPodio != null &&
                   !dtInicioPodio.isBefore(_filtroDataInicio!));
+
           DateTime? dtFimPodio = DateTime.tryParse(i.dataFinPresencial);
           bool matchFim =
               _filtroDataTermino == null ||
               (dtFimPodio != null && !dtFimPodio.isAfter(_filtroDataTermino!));
 
-          return matchStatus && matchHospedagem && matchInicio && matchFim;
+          return matchStatus &&
+              matchHospedagem &&
+              matchArea &&
+              matchInicio &&
+              matchFim;
         }).toList();
 
         // 2. Cálculos de Paginação
@@ -157,7 +170,7 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
 
               const SizedBox(height: 32),
 
-              // --- TABELA EXTRAÍDA ---
+              // --- TABELA ---
               IntercambistasTable(
                 isMobile: isMobile,
                 listaExibida: listaExibida,
@@ -227,6 +240,7 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
       isMobile: isMobile,
       filtroStatus: _filtroStatus,
       filtroHospedagem: _filtroHospedagem,
+      filtroArea: _filtroArea, 
       filtroDataInicio: _filtroDataInicio,
       filtroDataTermino: _filtroDataTermino,
       onStatusChanged: (v) {
@@ -237,6 +251,11 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
         _filtroHospedagem = v ?? 'Todos';
         _atualizarTela();
       },
+      onAreaChanged: (v) {
+        // NOVO
+        _filtroArea = v;
+        _atualizarTela();
+      },
       onDateChanged: (d, isInicio) {
         isInicio ? _filtroDataInicio = d : _filtroDataTermino = d;
         _atualizarTela();
@@ -244,6 +263,7 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
       onClear: () {
         _filtroStatus = null;
         _filtroHospedagem = 'Todos';
+        _filtroArea = null; 
         _filtroDataInicio = null;
         _filtroDataTermino = null;
         _atualizarTela();
