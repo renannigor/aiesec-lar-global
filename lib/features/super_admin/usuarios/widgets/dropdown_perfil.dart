@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aiesec_lar_global/core/widgets/selector.dart'; 
+import 'package:aiesec_lar_global/core/widgets/selector.dart';
 import 'package:aiesec_lar_global/data/models/usuario/usuario.dart';
 import 'package:aiesec_lar_global/data/models/perfil_usuario.dart';
 import 'package:aiesec_lar_global/data/services/usuario_service.dart';
@@ -40,15 +40,16 @@ class DropdownPerfil extends StatelessWidget {
         itemLabelBuilder: (p) => p.name.toUpperCase(),
         onChanged: (novoPerfil) async {
           if (novoPerfil != null) {
-            String? novoComiteId = usuario.comiteLocalId;
+            // Agora manipulamos 'aiesecMaisProxima' em vez do ID
+            String? novoComiteNome = usuario.aiesecMaisProxima;
 
             if (novoPerfil != PerfilUsuario.admin) {
-              novoComiteId = null;
+              novoComiteNome = null; // Remove o comitê se não for admin
             }
 
             final atualizado = usuario.copyWith(
               perfil: novoPerfil,
-              comiteLocalId: novoComiteId,
+              aiesecMaisProxima: novoComiteNome,
             );
 
             await UsuarioService.instance.atualizarUsuario(usuario: atualizado);
@@ -65,7 +66,8 @@ class DropdownPerfil extends StatelessWidget {
               final novoAcesso = AcessoUsuario(
                 uid: usuario.uid,
                 papel: papel,
-                comiteGerenciado: novoComiteId,
+                comiteGerenciado:
+                    novoComiteNome, // O Acesso agora guarda o Nome Único
                 concedidoEm: DateTime.now(),
               );
               await AcessoService.instance.definirAcesso(acesso: novoAcesso);

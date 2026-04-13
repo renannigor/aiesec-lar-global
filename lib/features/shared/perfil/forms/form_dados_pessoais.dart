@@ -26,6 +26,7 @@ class FormDadosPessoais extends StatefulWidget {
 
 class _FormDadosPessoaisState extends State<FormDadosPessoais> {
   late TextEditingController nomeController;
+  late TextEditingController cpfController; // <--- NOVO
   late TextEditingController telefoneController;
   late TextEditingController profissaoController;
   late TextEditingController dataNascController;
@@ -43,11 +44,19 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
   List<ComiteLocal> _listaComites = [];
   bool _carregandoComites = true;
 
+  // --- MÁSCARAS ---
+  final _cpfMaskFormatter = MaskTextInputFormatter(
+    mask: '###.###.###-##',
+    filter: {"#": RegExp(r'[0-9]')},
+    type: MaskAutoCompletionType.lazy,
+  );
+
   final _phoneMaskFormatter = MaskTextInputFormatter(
     mask: '(##) #####-####',
     filter: {"#": RegExp(r'[0-9]')},
     type: MaskAutoCompletionType.lazy,
   );
+
   final _dateMaskFormatter = MaskTextInputFormatter(
     mask: '##/##/####',
     filter: {"#": RegExp(r'[0-9]')},
@@ -58,6 +67,9 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
   void initState() {
     super.initState();
     nomeController = TextEditingController(text: widget.usuario.nome);
+    cpfController = TextEditingController(
+      text: widget.usuario.cpf ?? "",
+    ); // <--- NOVO
     telefoneController = TextEditingController(
       text: widget.usuario.telefone ?? "",
     );
@@ -85,6 +97,18 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
 
     // Busca os comitês assim que a tela abre
     _buscarComitesLocais();
+  }
+
+  @override
+  void dispose() {
+    // Boa prática: limpar os controllers ao fechar o widget
+    nomeController.dispose();
+    cpfController.dispose();
+    telefoneController.dispose();
+    profissaoController.dispose();
+    dataNascController.dispose();
+    pqHospedarController.dispose();
+    super.dispose();
   }
 
   // --- FUNÇÃO PARA CARREGAR COMITÊS ---
@@ -123,6 +147,7 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
     widget.onChanged(
       widget.usuario.copyWith(
         nome: nomeController.text,
+        cpf: cpfController.text, // <--- NOVO
         telefone: telefoneController.text,
         profissao: profissaoController.text,
         estadoCivil: civil,
@@ -164,6 +189,17 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
           labelText: "Nome Completo",
           hintText: "Seu nome completo",
           keyboardType: TextInputType.name,
+          onChanged: (_) => _atualizar(),
+          isPassword: false,
+          enabled: true,
+        ),
+        const SizedBox(height: 24),
+        Editor(
+          controller: cpfController,
+          labelText: "CPF",
+          hintText: "000.000.000-00",
+          keyboardType: TextInputType.number,
+          inputFormatters: [_cpfMaskFormatter],
           onChanged: (_) => _atualizar(),
           isPassword: false,
           enabled: true,

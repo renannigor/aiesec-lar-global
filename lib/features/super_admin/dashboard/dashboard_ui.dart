@@ -9,9 +9,10 @@ import 'package:aiesec_lar_global/data/models/intercambista/intercambista.dart';
 import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 import 'package:aiesec_lar_global/data/services/intercambista_service.dart';
 
-// --- IMPORTS DOS COMPONENTES (CRIADOS ABAIXO) ---
+// --- IMPORTS DOS COMPONENTES ---
 import 'components/dashboard_kpis.dart';
 import 'components/dashboard_states_cards.dart';
+import 'components/dashboard_ranking.dart';
 import 'components/dashboard_table.dart';
 
 class DashboardUI extends StatefulWidget {
@@ -25,6 +26,7 @@ class _DashboardUIState extends State<DashboardUI> {
   // Filtros da Tabela
   String _filtroComiteDash = 'Todos';
   String _filtroHospedagem = 'Todos';
+  String? _filtroArea;
 
   // Paginação da Tabela
   int _currentPage = 1;
@@ -32,6 +34,15 @@ class _DashboardUIState extends State<DashboardUI> {
 
   void _atualizarTabela() {
     setState(() => _currentPage = 1);
+  }
+
+  void _limparFiltros() {
+    setState(() {
+      _filtroComiteDash = 'Todos';
+      _filtroHospedagem = 'Todos';
+      _filtroArea = null;
+      _currentPage = 1;
+    });
   }
 
   @override
@@ -47,12 +58,16 @@ class _DashboardUIState extends State<DashboardUI> {
             // --- 1. CABEÇALHO ---
             Padding(
               padding: EdgeInsets.fromLTRB(
-                  isMobile ? 16 : 32, isMobile ? 24 : 32, isMobile ? 16 : 32, 16),
+                isMobile ? 16 : 32,
+                isMobile ? 24 : 32,
+                isMobile ? 16 : 32,
+                16,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Dashboard Global",
+                    "Dashboard Nacional",
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -75,12 +90,17 @@ class _DashboardUIState extends State<DashboardUI> {
                 stream: ComiteLocalService.instance.getComitesStream(),
                 builder: (context, comitesSnapshot) {
                   return StreamBuilder<List<Intercambista>>(
-                    stream: IntercambistaService.instance.getIntercambistasStream(),
+                    stream: IntercambistaService.instance
+                        .getIntercambistasStream(),
                     builder: (context, epsSnapshot) {
-                      if (comitesSnapshot.connectionState == ConnectionState.waiting ||
-                          epsSnapshot.connectionState == ConnectionState.waiting) {
+                      if (comitesSnapshot.connectionState ==
+                              ConnectionState.waiting ||
+                          epsSnapshot.connectionState ==
+                              ConnectionState.waiting) {
                         return const Center(
-                          child: CircularProgressIndicator(color: AppColors.primary),
+                          child: CircularProgressIndicator(
+                            color: AppColors.primary,
+                          ),
                         );
                       }
 
@@ -89,19 +109,29 @@ class _DashboardUIState extends State<DashboardUI> {
 
                       // --- Lógica de Filtro da Tabela ---
                       final epsFiltrados = todosIntercambistas.where((ep) {
-                        bool matchComite = _filtroComiteDash == 'Todos' || ep.comite == _filtroComiteDash;
-                        bool matchHospedagem = _filtroHospedagem == 'Todos' ||
-                            (_filtroHospedagem == 'Sim' && ep.precisaHospedagem) ||
-                            (_filtroHospedagem == 'Não' && !ep.precisaHospedagem);
+                        bool matchComite =
+                            _filtroComiteDash == 'Todos' ||
+                            ep.comite == _filtroComiteDash;
+                        bool matchHospedagem =
+                            _filtroHospedagem == 'Todos' ||
+                            (_filtroHospedagem == 'Sim' &&
+                                ep.precisaHospedagem) ||
+                            (_filtroHospedagem == 'Não' &&
+                                !ep.precisaHospedagem);
+                        bool matchArea =
+                            _filtroArea == null || ep.area == _filtroArea;
 
-                        return matchComite && matchHospedagem;
+                        return matchComite && matchHospedagem && matchArea;
                       }).toList();
 
                       // --- Lógica de Paginação da Tabela ---
                       final totalItems = epsFiltrados.length;
                       final totalPages = (totalItems / _itemsPerPage).ceil();
                       final startIndex = (_currentPage - 1) * _itemsPerPage;
-                      final endIndex = min(startIndex + _itemsPerPage, totalItems);
+                      final endIndex = min(
+                        startIndex + _itemsPerPage,
+                        totalItems,
+                      );
                       final paginatedList = totalItems > 0
                           ? epsFiltrados.sublist(startIndex, endIndex)
                           : <Intercambista>[];
@@ -119,17 +149,53 @@ class _DashboardUIState extends State<DashboardUI> {
                             ),
                             const SizedBox(height: 32),
 
-                            // SEÇÃO 2: COMITÊS POR ESTADO
-                            const Text(
-                              "Comitês por Estado",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
+                            // SEÇÃO 2: RANKING E ESTADOS
+                            if (isMobile) ...[
+                              DashboardRanking(eps: todosIntercambistas),
+                              const SizedBox(height: 32),
+                              const Text(
+                                "Comitês por Estado",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            DashboardStatesCards(comites: comites),
+                              const SizedBox(height: 16),
+                              DashboardStatesCards(comites: comites),
+                            ] else
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 35,
+                                    child: DashboardRanking(
+                                      eps: todosIntercambistas,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 32),
+                                  Expanded(
+                                    flex: 65,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "Comitês por Estado",
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        DashboardStatesCards(comites: comites),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+
                             const SizedBox(height: 40),
 
                             // SEÇÃO 3: FUNIL DE INTERCAMBISTAS (TABELA PAGINADA)
@@ -144,6 +210,7 @@ class _DashboardUIState extends State<DashboardUI> {
                               endIndex: endIndex,
                               filtroComite: _filtroComiteDash,
                               filtroHospedagem: _filtroHospedagem,
+                              filtroArea: _filtroArea,
                               onComiteChanged: (val) {
                                 if (val != null) {
                                   setState(() => _filtroComiteDash = val);
@@ -156,9 +223,15 @@ class _DashboardUIState extends State<DashboardUI> {
                                   _atualizarTabela();
                                 }
                               },
+                              onAreaChanged: (val) {
+                                setState(() => _filtroArea = val);
+                                _atualizarTabela();
+                              },
                               onPageChanged: (page) {
                                 setState(() => _currentPage = page);
                               },
+                              onClear:
+                                  _limparFiltros, // <--- REPASSA O MÉTODO DE LIMPEZA
                             ),
                           ],
                         ),

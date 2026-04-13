@@ -4,9 +4,6 @@ import 'package:aiesec_lar_global/data/models/usuario/preferencias_hospedagem.da
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../endereco.dart';
 
-// 1. Sentinela para detectar quando um valor não foi passado
-const _sentinel = Object();
-
 class Usuario {
   Usuario({
     required this.uid,
@@ -17,8 +14,8 @@ class Usuario {
     required this.perfil,
 
     // --- Campos de Informação Básica / CRM ---
-    this.comiteLocalId,
     this.aiesecMaisProxima,
+    this.cpf,
     this.comoPrefereSerContactado,
     this.comoConheceuAiesec,
     this.dataNascimento,
@@ -49,8 +46,8 @@ class Usuario {
         criadoEm: (json['criadoEm']! as Timestamp).toDate(),
         perfil: _perfilFromString(json['perfil'] as String?),
 
-        comiteLocalId: json['comiteLocalId'] as String?,
         aiesecMaisProxima: json['aiesecMaisProxima'] as String?,
+        cpf: json['cpf'] as String?,
         comoPrefereSerContactado: json['comoPrefereSerContactado'] as String?,
         comoConheceuAiesec: json['comoConheceuAiesec'] as String?,
         dataNascimento: json['dataNascimento'] == null
@@ -88,8 +85,8 @@ class Usuario {
   final DateTime criadoEm;
   final PerfilUsuario perfil;
 
-  final String? comiteLocalId;
   final String? aiesecMaisProxima;
+  final String? cpf;
   final String? comoPrefereSerContactado;
   final String? comoConheceuAiesec;
   final DateTime? dataNascimento;
@@ -113,8 +110,8 @@ class Usuario {
     String? fotoPerfilUrl,
     DateTime? criadoEm,
     PerfilUsuario? perfil,
-    Object? comiteLocalId = _sentinel,
     String? aiesecMaisProxima,
+    String? cpf,
     String? comoPrefereSerContactado,
     String? comoConheceuAiesec,
     DateTime? dataNascimento,
@@ -136,10 +133,8 @@ class Usuario {
       fotoPerfilUrl: fotoPerfilUrl ?? this.fotoPerfilUrl,
       criadoEm: criadoEm ?? this.criadoEm,
       perfil: perfil ?? this.perfil,
-      comiteLocalId: comiteLocalId == _sentinel
-          ? this.comiteLocalId
-          : comiteLocalId as String?,
       aiesecMaisProxima: aiesecMaisProxima ?? this.aiesecMaisProxima,
+      cpf: cpf ?? this.cpf,
       comoPrefereSerContactado:
           comoPrefereSerContactado ?? this.comoPrefereSerContactado,
       comoConheceuAiesec: comoConheceuAiesec ?? this.comoConheceuAiesec,
@@ -167,8 +162,8 @@ class Usuario {
       'fotoPerfilUrl': fotoPerfilUrl,
       'criadoEm': Timestamp.fromDate(criadoEm),
       'perfil': perfil.name,
-      'comiteLocalId': comiteLocalId,
       'aiesecMaisProxima': aiesecMaisProxima,
+      'cpf': cpf,
       'comoPrefereSerContactado': comoPrefereSerContactado,
       'comoConheceuAiesec': comoConheceuAiesec,
       'dataNascimento': dataNascimento == null
@@ -209,6 +204,7 @@ class Usuario {
     }
 
     // 1. Dados Básicos / CRM
+    checarCampo(cpf); // <--- CAMPO DE CPF ADICIONADO AQUI
     checarCampo(telefone);
     checarCampo(aiesecMaisProxima);
     checarCampo(comoPrefereSerContactado);
@@ -233,12 +229,12 @@ class Usuario {
       }
 
       checarCampo(detalhesHospedagem!.acessoAreasComuns);
-      checarCampo(detalhesHospedagem!.acessoAguaEnergia); 
+      checarCampo(detalhesHospedagem!.acessoAguaEnergia);
       checarCampo(detalhesHospedagem!.refeicoesOferecidas);
       checarCampo(detalhesHospedagem!.maxIntercambistas);
       checarCampo(detalhesHospedagem!.periodoHospedagem);
       checarCampo(detalhesHospedagem!.temAnimais);
-      checarCampo(detalhesHospedagem!.descricaoMoradores); 
+      checarCampo(detalhesHospedagem!.descricaoMoradores);
 
       // CAMPO CONDICIONAL: Só checa os detalhes dos animais se a pessoa disser que tem
       if (detalhesHospedagem!.temAnimais == true) {

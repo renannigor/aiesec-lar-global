@@ -49,7 +49,7 @@ class _DialogRejeicaoAppState extends State<DialogRejeicaoApp> {
     return AlertDialog(
       title: const Text("Motivo da Rejeição"),
       content: SizedBox(
-        width: 500, // Evita que o dialog fique espremido no Web/Desktop
+        width: 500,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,74 +80,80 @@ class _DialogRejeicaoAppState extends State<DialogRejeicaoApp> {
 
                 final mensagens = snapshot.data ?? [];
 
-                return Column(
-                  children: [
-                    ...mensagens.map((msg) {
-                      return RadioListTile<String>(
+                return RadioGroup<String>(
+                  groupValue: _opcaoSelecionadaId,
+                  onChanged: (val) {
+                    setState(() {
+                      _opcaoSelecionadaId = val;
+                      if (val == 'outro') {
+                        _descricaoSelecionada = null;
+                      } else {
+                        // Quando selecionado, busca a descrição correspondente na lista
+                        try {
+                          _descricaoSelecionada = mensagens
+                              .firstWhere((m) => m.id == val)
+                              .descricao;
+                        } catch (e) {
+                          _descricaoSelecionada = null;
+                        }
+                      }
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      ...mensagens.map((msg) {
+                        return RadioListTile<String>(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            msg.titulo,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: Text(
+                            msg.descricao,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          value: msg.id,
+                          activeColor: Colors.red,
+                        );
+                      }),
+
+                      // OPÇÃO "OUTRO"
+                      RadioListTile<String>(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          msg.titulo,
-                          style: const TextStyle(
+                        title: const Text(
+                          "Outro Motivo Específico",
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
-                        subtitle: Text(
-                          msg.descricao,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        value: msg.id,
-                        groupValue: _opcaoSelecionadaId,
+                        value: 'outro',
                         activeColor: Colors.red,
-                        onChanged: (val) {
-                          setState(() {
-                            _opcaoSelecionadaId = val;
-                            _descricaoSelecionada = msg.descricao;
-                          });
-                        },
-                      );
-                    }),
-
-                    // OPÇÃO "OUTRO" (Sempre fica no final)
-                    RadioListTile<String>(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        "Outro Motivo Específico",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
                       ),
-                      value: 'outro',
-                      groupValue: _opcaoSelecionadaId,
-                      activeColor: Colors.red,
-                      onChanged: (val) {
-                        setState(() {
-                          _opcaoSelecionadaId = val;
-                          _descricaoSelecionada = null;
-                        });
-                      },
-                    ),
 
-                    // CAMPO DE TEXTO ABERTO (Aparece com animação suave)
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      child: _opcaoSelecionadaId == 'outro'
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 16.0),
-                              child: Editor(
-                                controller: _motivoPersonalizadoCtrl,
-                                labelText:
-                                    "Descreva o motivo detalhadamente...",
-                                isPassword: false,
-                                keyboardType: TextInputType.multiline,
-                                enabled: true,
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
+                      // CAMPO DE TEXTO ABERTO
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        child: _opcaoSelecionadaId == 'outro'
+                            ? Padding(
+                                padding: const EdgeInsets.only(top: 16.0),
+                                child: Editor(
+                                  controller: _motivoPersonalizadoCtrl,
+                                  labelText:
+                                      "Descreva o motivo detalhadamente...",
+                                  isPassword: false,
+                                  keyboardType: TextInputType.multiline,
+                                  enabled: true,
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),

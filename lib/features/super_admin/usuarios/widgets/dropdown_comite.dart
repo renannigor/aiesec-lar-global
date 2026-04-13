@@ -1,6 +1,6 @@
 import 'package:aiesec_lar_global/data/models/perfil_usuario.dart';
 import 'package:flutter/material.dart';
-import 'package:aiesec_lar_global/core/widgets/selector.dart'; 
+import 'package:aiesec_lar_global/core/widgets/selector.dart';
 import 'package:aiesec_lar_global/data/models/usuario/usuario.dart';
 import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
 import 'package:aiesec_lar_global/data/services/usuario_service.dart';
@@ -28,12 +28,8 @@ class DropdownComite extends StatelessWidget {
     }
 
     if (isDisabled) {
-      final comiteNome =
-          comites
-              .where((c) => c.comiteId == usuario.comiteLocalId)
-              .firstOrNull
-              ?.nome ??
-          "Não definido";
+      // Como aiesecMaisProxima já é o nome único, não precisamos mais fazer o filtro (.where)
+      final comiteNome = usuario.aiesecMaisProxima ?? "Não definido";
 
       return Text(
         comiteNome,
@@ -50,18 +46,18 @@ class DropdownComite extends StatelessWidget {
       width: 180, // Controla a largura dentro da tabela
       child: Selector<String>(
         isFilter: true, // Usa o estilo de borda fina
-        value: usuario.comiteLocalId,
-        // Passamos a lista de IDs dos comitês
-        items: comites.map((c) => c.comiteId!).toList(),
-        // Transformamos o ID no nome visual que vai aparecer na caixinha
-        itemLabelBuilder: (id) {
-          final c = comites.where((com) => com.comiteId == id).firstOrNull;
-          return c?.nome ?? "Selecione...";
-        },
-        onChanged: (novoId) async {
-          if (novoId == null) return;
+        value: usuario.aiesecMaisProxima, // Lê do campo correto
+        // Extrai apenas a lista de NOMES dos comitês para o menu
+        items: comites.map((c) => c.nome).toList(),
 
-          final atualizado = usuario.copyWith(comiteLocalId: novoId);
+        // Como 'items' já são Strings (nomes), apenas retornamos o próprio valor
+        itemLabelBuilder: (nome) => nome,
+
+        onChanged: (novoNome) async {
+          if (novoNome == null) return;
+
+          // Atualiza o nome do comitê no model
+          final atualizado = usuario.copyWith(aiesecMaisProxima: novoNome);
 
           await UsuarioService.instance.atualizarUsuario(usuario: atualizado);
 
@@ -72,7 +68,8 @@ class DropdownComite extends StatelessWidget {
           final acessoAtualizado = AcessoUsuario(
             uid: usuario.uid,
             papel: papel,
-            comiteGerenciado: novoId,
+            comiteGerenciado:
+                novoNome, // Atualiza a permissão de Acesso com o nome
             concedidoEm: DateTime.now(),
           );
 

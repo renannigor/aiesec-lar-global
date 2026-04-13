@@ -23,7 +23,6 @@ class ComitesFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Definimos uma largura fixa agradável para não ficar gigante no desktop
     final double fieldWidth = isMobile
         ? (MediaQuery.of(context).size.width / 2) - 24
         : 200;

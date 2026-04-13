@@ -3,9 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/data/models/usuario/usuario.dart';
 import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
-import 'dropdown_perfil.dart';
-import 'dropdown_comite.dart';
-import 'user_name_badge.dart';
+import '../widgets/dropdown_perfil.dart';
+import '../widgets/dropdown_comite.dart';
+import '../widgets/user_name_badge.dart';
 
 class UsuariosTableDesktop extends StatelessWidget {
   final List<Usuario> usuarios;
@@ -141,30 +141,68 @@ class UsuariosTableDesktop extends StatelessWidget {
                                   DataCell(
                                     Row(
                                       children: [
-                                        CircleAvatar(
-                                          radius: 16,
-                                          backgroundColor: AppColors.primary
-                                              .withValues(alpha: 0.1),
-                                          backgroundImage:
-                                              usuario.fotoPerfilUrl.isNotEmpty
-                                              ? NetworkImage(
-                                                  usuario.fotoPerfilUrl,
-                                                )
-                                              : null,
-                                          child: usuario.fotoPerfilUrl.isEmpty
-                                              ? Text(
-                                                  usuario.nome.isNotEmpty
-                                                      ? usuario.nome[0]
-                                                            .toUpperCase()
-                                                      : '?',
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: AppColors.primary,
-                                                    fontSize: 12,
+                                        // --- APLICAÇÃO DA SUA SOLUÇÃO COM ERROR BUILDER ---
+                                        Container(
+                                          width: 32, // O dobro do radius (16)
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: ClipOval(
+                                            child:
+                                                usuario.fotoPerfilUrl.isNotEmpty
+                                                ? Image.network(
+                                                    usuario.fotoPerfilUrl,
+                                                    fit: BoxFit.cover,
+                                                    // Captura falhas (ex: Erro 429) e exibe o inicial do nome ou '?'
+                                                    errorBuilder:
+                                                        (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) {
+                                                          return Center(
+                                                            child: Text(
+                                                              usuario
+                                                                      .nome
+                                                                      .isNotEmpty
+                                                                  ? usuario
+                                                                        .nome[0]
+                                                                        .toUpperCase()
+                                                                  : '?',
+                                                              style: const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: AppColors
+                                                                    .primary,
+                                                                fontSize: 12,
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                  )
+                                                : Center(
+                                                    child: Text(
+                                                      usuario.nome.isNotEmpty
+                                                          ? usuario.nome[0]
+                                                                .toUpperCase()
+                                                          : '?',
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color:
+                                                            AppColors.primary,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
                                                   ),
-                                                )
-                                              : null,
+                                          ),
                                         ),
+                                        // ----------------------------------------------------
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: UserNameBadge(

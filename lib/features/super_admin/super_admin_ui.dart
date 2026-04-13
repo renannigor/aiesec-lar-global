@@ -66,6 +66,11 @@ class _SuperAdminUIState extends State<SuperAdminUI> {
               type: BottomNavigationBarType.fixed,
               items: const [
                 BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard_outlined),
+                  activeIcon: Icon(Icons.dashboard),
+                  label: 'Dashboard',
+                ),
+                BottomNavigationBarItem(
                   icon: Icon(Icons.people_outline),
                   activeIcon: Icon(Icons.people),
                   label: 'Usuários',

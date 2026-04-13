@@ -1,3 +1,4 @@
+import 'package:aiesec_lar_global/data/services/intercambista_service.dart';
 import 'package:aiesec_lar_global/features/admin/aplicantes/components/detalhes_host_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -74,6 +75,15 @@ class AplicantesUI extends StatelessWidget {
         aplicacaoId: app.aplicacaoId,
         novoStatus: novoStatus,
       );
+
+      // Se o status for atualizado para "Hospedando", atualiza o EP para não precisar mais de hospedagem
+      if (novoStatus == StatusAplicacao.hospedando) {
+        await IntercambistaService.instance.atualizarNecessidadeHospedagem(
+          intercambistaId: app.intercambistaId,
+          precisaHospedagem: false,
+        );
+      }
+
       SnackbarUtils.showSuccess("Status atualizado!");
     }
   }

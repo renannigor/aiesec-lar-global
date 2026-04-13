@@ -1,9 +1,13 @@
+import 'package:aiesec_lar_global/data/models/area_filtro.dart';
 import 'package:flutter/material.dart';
 import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/core/widgets/selector.dart';
 import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
 import 'package:aiesec_lar_global/data/models/intercambista/intercambista.dart';
 import 'package:aiesec_lar_global/data/services/aplicacao_service.dart';
+
+// --- IMPORT PARA O BOTTOM SHEET DO FUNIL ---
+import 'dashboard_funil_sheet.dart';
 
 class DashboardTable extends StatelessWidget {
   final bool isMobile;
@@ -15,14 +19,17 @@ class DashboardTable extends StatelessWidget {
   final int startIndex;
   final int endIndex;
 
-  // Filtros Controlados pela Tela Principal
+  // Filtros
   final String filtroComite;
   final String filtroHospedagem;
+  final String? filtroArea;
   final Function(String?) onComiteChanged;
   final Function(String?) onHospedagemChanged;
+  final Function(String?) onAreaChanged;
   final Function(int) onPageChanged;
+  final VoidCallback onClear;
 
-  const DashboardTable({
+  DashboardTable({
     super.key,
     required this.isMobile,
     required this.comites,
@@ -34,17 +41,25 @@ class DashboardTable extends StatelessWidget {
     required this.endIndex,
     required this.filtroComite,
     required this.filtroHospedagem,
+    required this.filtroArea,
     required this.onComiteChanged,
     required this.onHospedagemChanged,
+    required this.onAreaChanged,
     required this.onPageChanged,
+    required this.onClear,
   });
+
+  final List<AreaFiltro> _opcoesAreas = [
+    AreaFiltro(label: "Voluntário (iGV)", value: "iGV"),
+    AreaFiltro(label: "Estágio Empresas (iGTa)", value: "iGTa"),
+    AreaFiltro(label: "Estágio Ensino (iGTe)", value: "iGTe"),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // --- 1. CABEÇALHO DA TABELA (TÍTULO E FILTROS) ---
         if (isMobile)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +93,7 @@ class DashboardTable extends StatelessWidget {
           ),
         const SizedBox(height: 16),
 
-        // --- 2. TABELA EM SI ---
+        // --- TABELA ---
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -93,7 +108,7 @@ class DashboardTable extends StatelessWidget {
                   padding: EdgeInsets.all(40),
                   child: Center(
                     child: Text(
-                      "Nenhum intercambista encontrado.",
+                      "Nenhum intercambista encontrado com estes filtros.",
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
@@ -102,7 +117,7 @@ class DashboardTable extends StatelessWidget {
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final minTableWidth = isMobile
-                        ? 800.0
+                        ? 1000.0
                         : constraints.maxWidth;
                     return SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -122,13 +137,13 @@ class DashboardTable extends StatelessWidget {
                           columns: [
                             DataColumn(
                               label: SizedBox(
-                                width: minTableWidth * 0.35,
+                                width: minTableWidth * 0.30,
                                 child: const Text('INTERCAMBISTA'),
                               ),
                             ),
                             DataColumn(
                               label: SizedBox(
-                                width: minTableWidth * 0.25,
+                                width: minTableWidth * 0.20,
                                 child: const Text('COMITÊ'),
                               ),
                             ),
@@ -138,10 +153,21 @@ class DashboardTable extends StatelessWidget {
                                 child: const Text('PRECISA HOST?'),
                               ),
                             ),
-                            const DataColumn(label: Text('APLICAÇÕES ATIVAS')),
+                            DataColumn(
+                              label: SizedBox(
+                                width: minTableWidth * 0.15,
+                                child: const Text('APLICAÇÕES ATIVAS'),
+                              ),
+                            ),
+                            const DataColumn(
+                              label: Text('STATUS DOS HOSTS'),
+                            ), // <--- NOVA COLUNA
                           ],
                           rows: paginatedList
-                              .map((ep) => _buildDataRow(ep, minTableWidth))
+                              .map(
+                                (ep) =>
+                                    _buildDataRow(context, ep, minTableWidth),
+                              )
                               .toList(),
                         ),
                       ),
@@ -149,7 +175,7 @@ class DashboardTable extends StatelessWidget {
                   },
                 ),
 
-              // --- 3. PAGINAÇÃO ---
+              // --- PAGINAÇÃO ---
               if (totalPages > 1) ...[
                 Divider(height: 1, color: Colors.grey.shade200),
                 Padding(
@@ -199,19 +225,37 @@ class DashboardTable extends StatelessWidget {
   }
 
   Widget _buildFilters(bool isMobile) {
+    final hasActiveFilter =
+        filtroComite != 'Todos' ||
+        filtroHospedagem != 'Todos' ||
+        filtroArea != null;
+
     final widgets = [
       SizedBox(
         width: 180,
         child: Selector<String>(
           isFilter: true,
-          labelText: "Filtrar Comitê",
+          labelText: "Comitê",
           value: filtroComite,
           items: ['Todos', ...comites.map((c) => c.nomePodio).toList()..sort()],
           onChanged: onComiteChanged,
         ),
       ),
       SizedBox(
-        width: 140,
+        width: 180,
+        child: Selector<AreaFiltro>(
+          isFilter: true,
+          labelText: "Tipo (Área)",
+          value: filtroArea != null
+              ? _opcoesAreas.firstWhere((a) => a.value == filtroArea)
+              : null,
+          items: _opcoesAreas,
+          itemLabelBuilder: (a) => a.label,
+          onChanged: (val) => onAreaChanged(val?.value),
+        ),
+      ),
+      SizedBox(
+        width: 130,
         child: Selector<String>(
           isFilter: true,
           labelText: "Precisa Host?",
@@ -220,23 +264,51 @@ class DashboardTable extends StatelessWidget {
           onChanged: onHospedagemChanged,
         ),
       ),
+      // --- NOVO: BOTÃO LIMPAR ---
+      if (hasActiveFilter)
+        SizedBox(
+          height: 48,
+          child: TextButton.icon(
+            onPressed: onClear,
+            icon: const Icon(Icons.close, size: 16),
+            label: const Text("Limpar"),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey.shade600),
+          ),
+        ),
     ];
 
     if (isMobile) {
-      return Wrap(spacing: 12, runSpacing: 12, children: widgets);
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: widgets,
+      );
     }
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [widgets[0], const SizedBox(width: 12), widgets[1]],
+      children: [
+        widgets[0],
+        const SizedBox(width: 12),
+        widgets[1],
+        const SizedBox(width: 12),
+        widgets[2],
+        if (hasActiveFilter) const SizedBox(width: 12),
+        if (hasActiveFilter) widgets[3],
+      ],
     );
   }
 
-  DataRow _buildDataRow(Intercambista ep, double minTableWidth) {
+  DataRow _buildDataRow(
+    BuildContext context,
+    Intercambista ep,
+    double minTableWidth,
+  ) {
     return DataRow(
       cells: [
         DataCell(
           SizedBox(
-            width: minTableWidth * 0.35,
+            width: minTableWidth * 0.30,
             child: Row(
               children: [
                 CircleAvatar(
@@ -253,10 +325,23 @@ class DashboardTable extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    ep.nome,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        ep.nome,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        ep.area,
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -265,7 +350,7 @@ class DashboardTable extends StatelessWidget {
         ),
         DataCell(
           SizedBox(
-            width: minTableWidth * 0.25,
+            width: minTableWidth * 0.20,
             child: Text(
               ep.comite,
               style: const TextStyle(color: Colors.grey),
@@ -301,40 +386,85 @@ class DashboardTable extends StatelessWidget {
           ),
         ),
         DataCell(
-          FutureBuilder<int>(
-            future: AplicacaoService.instance.getQuantidadeAplicacoesAtivas(
-              ep.epId,
-            ),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                );
-              }
-              final qtd = snapshot.data ?? 0;
-              return Row(
-                children: [
-                  Icon(
-                    qtd > 0 ? Icons.people : Icons.sentiment_dissatisfied,
-                    size: 16,
-                    color: qtd > 0 ? AppColors.primary : Colors.grey,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    "$qtd Hosts interessados",
-                    style: TextStyle(
-                      fontWeight: qtd > 0 ? FontWeight.bold : FontWeight.normal,
-                      color: qtd > 0 ? AppColors.textPrimary : Colors.grey,
+          SizedBox(
+            width: minTableWidth * 0.15,
+            child: FutureBuilder<int>(
+              future: AplicacaoService.instance.getQuantidadeAplicacoesAtivas(
+                ep.epId,
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                  ),
-                ],
-              );
-            },
+                  );
+                }
+                final qtd = snapshot.data ?? 0;
+                return Row(
+                  children: [
+                    Icon(
+                      qtd > 0 ? Icons.people : Icons.sentiment_dissatisfied,
+                      size: 16,
+                      color: qtd > 0 ? AppColors.primary : Colors.grey,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      "$qtd Interessados",
+                      style: TextStyle(
+                        fontWeight: qtd > 0
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: qtd > 0 ? AppColors.textPrimary : Colors.grey,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+        DataCell(
+          OutlinedButton.icon(
+            onPressed: () => _abrirBottomSheetFunil(context, ep),
+            icon: const Icon(
+              Icons.analytics_outlined,
+              size: 16,
+              color: AppColors.primary,
+            ),
+            label: const Text(
+              "Ver Funil",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  void _abrirBottomSheetFunil(BuildContext context, Intercambista ep) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => FractionallySizedBox(
+        heightFactor: 0.80,
+        child: DashboardFunilSheet(ep: ep),
+      ),
     );
   }
 }

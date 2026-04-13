@@ -79,6 +79,16 @@ class IntercambistaService {
         .update(intercambista.toJson());
   }
 
+  /// ATUALIZAR: Atualiza apenas o campo 'precisaHospedagem' do EP, sem afetar outros dados.
+  Future<void> atualizarNecessidadeHospedagem({
+    required String intercambistaId,
+    required bool precisaHospedagem,
+  }) async {
+    await _intercambistasRef.doc(intercambistaId).update({
+      'precisaHospedagem': precisaHospedagem,
+    });
+  }
+
   /// DELETAR: Remove o documento usando o epId.
   Future<void> deletarIntercambista({required String epId}) async {
     await _intercambistasRef.doc(epId).delete();

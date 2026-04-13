@@ -12,9 +12,9 @@ import 'package:aiesec_lar_global/data/services/usuario_service.dart';
 import 'package:aiesec_lar_global/data/services/auth_service.dart';
 
 // Imports dos Widgets Locais Refatorados
-import 'widgets/usuarios_filter.dart';
-import 'widgets/usuarios_table_desktop.dart';
-import 'widgets/usuarios_list_mobile.dart';
+import 'components/usuarios_filter.dart';
+import 'components/usuarios_table_desktop.dart';
+import 'components/usuarios_list_mobile.dart';
 
 class UsuariosUI extends StatefulWidget {
   const UsuariosUI({super.key});

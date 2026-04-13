@@ -32,7 +32,6 @@ class ComitesTable extends StatelessWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      // Usamos o LayoutBuilder para capturar o tamanho exato da tela do usuário
       child: LayoutBuilder(
         builder: (context, constraints) {
           // Garante que a tabela tenha no mínimo 800px no celular para poder fazer o scroll horizontal,
