@@ -1,7 +1,5 @@
 import 'package:aiesec_lar_global/data/models/acesso_usuario.dart';
-import 'package:aiesec_lar_global/data/services/acesso_service.dart'; // Crie esse service ou use o Firestore direto
-import 'package:aiesec_lar_global/data/models/usuario/usuario.dart';
-import 'package:aiesec_lar_global/data/services/usuario_service.dart';
+import 'package:aiesec_lar_global/data/services/acesso_service.dart';
 import 'package:aiesec_lar_global/features/admin/admin_ui.dart';
 import 'package:aiesec_lar_global/features/auth/auth_ui.dart';
 import 'package:aiesec_lar_global/features/auth/verify_email_screen.dart';
@@ -21,55 +19,35 @@ class AuthGate extends StatelessWidget {
     if (firebaseUser == null) return const AuthUI();
     if (!firebaseUser.emailVerified) return const VerifyEmailScreen();
 
-    // Vamos usar um StreamBuilder aninhado ou combinar os dados
-    return StreamBuilder<Usuario?>(
-      stream: UsuarioService.instance.getUsuarioStream(uid: firebaseUser.uid),
-      builder: (context, usuarioSnapshot) {
-        if (usuarioSnapshot.connectionState == ConnectionState.waiting) {
+    return StreamBuilder<AcessoUsuario?>(
+      stream: AcessoService.instance.getAcessoStream(uid: firebaseUser.uid),
+      builder: (context, acessoSnapshot) {
+        if (acessoSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        if (!usuarioSnapshot.hasData) return const AuthUI();
+        if (acessoSnapshot.hasError) {
+          print('🚨 ERRO NO STREAM DE ACESSO: ${acessoSnapshot.error}');
+        }
 
-        // Agora buscamos o acesso na coleção protegida que o usuário NÃO edita
-        return StreamBuilder<AcessoUsuario?>(
-          stream: AcessoService.instance.getAcessoStream(uid: firebaseUser.uid),
-          builder: (context, acessoSnapshot) {
-            // Enquanto verifica o acesso, pode mostrar um loading rápido
-            if (acessoSnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            if (acessoSnapshot.hasError) {
-              print(
-                '🚨 ERRO FATAL NO STREAM DE ACESSO: ${acessoSnapshot.error}',
-              );
-            }
+        // Se NÃO existir um documento na coleção 'acessos', ele é obrigatoriamente um HOST
+        if (!acessoSnapshot.hasData || acessoSnapshot.data == null) {
+          print(
+            'Nenhum acesso encontrado para ${firebaseUser.uid}, abrindo HostUI',
+          );
+          return const HostUI();
+        }
 
-            print('Dados do usuário: ${usuarioSnapshot.data?.nome}');
-            print('Dados de acesso: ${acessoSnapshot.hasData}');
-
-            // Se NÃO existir um documento na coleção 'acessos', ele é obrigatoriamente um HOST
-            if (!acessoSnapshot.hasData || acessoSnapshot.data == null) {
-              print(
-                'Nenhum acesso encontrado para o usuário ${firebaseUser.uid}, assumindo papel HOST',
-              );
-              return const HostUI();
-            }
-
-            // Se existir, verificamos o papel real definido pelo Superadmin
-            final acesso = acessoSnapshot.data!;
-            switch (acesso.papel) {
-              case PapelAcesso.admin:
-                return const AdminUI();
-              case PapelAcesso.superadmin:
-                return const SuperAdminUI();
-            }
-          },
-        );
+        // Se existir, verificamos o papel real definido pelo Superadmin
+        final acesso = acessoSnapshot.data!;
+        switch (acesso.papel) {
+          case PapelAcesso.admin:
+            return const AdminUI();
+          case PapelAcesso.superadmin:
+            return const SuperAdminUI();
+        }
       },
     );
   }

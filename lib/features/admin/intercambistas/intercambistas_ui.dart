@@ -17,8 +17,6 @@ import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 import 'package:aiesec_lar_global/features/admin/intercambistas/components/detalhes_intercambista_sheet.dart';
 import 'package:aiesec_lar_global/features/admin/intercambistas/components/intercambista_form_sheet.dart';
 import 'package:aiesec_lar_global/features/admin/aplicantes/aplicantes_ui.dart';
-
-// NOVO: Componentes Fragmentados
 import 'package:aiesec_lar_global/features/admin/intercambistas/components/intercambistas_filters.dart';
 import 'package:aiesec_lar_global/features/admin/intercambistas/components/intercambistas_table.dart';
 
@@ -35,7 +33,7 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
   // Filtros
   String? _filtroStatus;
   String _filtroHospedagem = 'Todos';
-  String? _filtroArea; // NOVO
+  String? _filtroArea;
   DateTime? _filtroDataInicio;
   DateTime? _filtroDataTermino;
 
@@ -112,7 +110,6 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
               (_filtroHospedagem == 'Sim' && i.precisaHospedagem) ||
               (_filtroHospedagem == 'Não' && !i.precisaHospedagem);
 
-          // NOVO: Lógica do filtro de área
           bool matchArea = _filtroArea == null || i.area == _filtroArea;
 
           DateTime? dtInicioPodio = DateTime.tryParse(i.dataRePresencial);
@@ -167,6 +164,11 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
                     _buildFilters(isMobile),
                   ],
                 ),
+
+              const SizedBox(height: 32),
+
+              // --- MINI DASHBOARD LOCAL ---
+              _buildMiniDash(listaExibida, isMobile),
 
               const SizedBox(height: 32),
 
@@ -235,12 +237,131 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
     );
   }
 
+  // --- MÉTODO DO DASHBOARD ---
+  Widget _buildMiniDash(List<Intercambista> lista, bool isMobile) {
+    if (lista.isEmpty) return const SizedBox.shrink();
+
+    final total = lista.length;
+    final precisamHost = lista.where((ep) => ep.precisaHospedagem).length;
+    final garantidos = total - precisamHost;
+
+    // EPs chegando nos próximos 30 dias que ainda precisam de Host
+    final hoje = DateTime.now();
+    final limite30Dias = hoje.add(const Duration(days: 30));
+    final chegandoEmBreve = lista.where((ep) {
+      if (!ep.precisaHospedagem) return false;
+      DateTime? dtChegada = DateTime.tryParse(
+        ep.dataChegada ?? ep.dataRePresencial,
+      );
+      if (dtChegada == null) return false;
+      return dtChegada.isAfter(hoje) && dtChegada.isBefore(limite30Dias);
+    }).length;
+
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      children: [
+        _buildDashCard(
+          isMobile,
+          titulo: "Total de EPs",
+          valor: total.toString(),
+          icone: Icons.people_outline,
+          cor: Colors.blue,
+        ),
+        _buildDashCard(
+          isMobile,
+          titulo: "Precisam de Host",
+          valor: precisamHost.toString(),
+          icone: Icons.home_work_outlined,
+          cor: Colors.orange,
+        ),
+        _buildDashCard(
+          isMobile,
+          titulo: "Acomodação OK",
+          valor: garantidos.toString(),
+          icone: Icons.check_circle_outline,
+          cor: Colors.green,
+        ),
+        _buildDashCard(
+          isMobile,
+          titulo: "Chegando (< 30 dias)",
+          valor: chegandoEmBreve.toString(),
+          icone: Icons.warning_amber_rounded,
+          cor: chegandoEmBreve > 0 ? Colors.red : Colors.grey,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDashCard(
+    bool isMobile, {
+    required String titulo,
+    required String valor,
+    required IconData icone,
+    required Color cor,
+  }) {
+    return Container(
+      width: isMobile ? double.infinity : 220,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: cor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icone, color: cor, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  valor,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFilters(bool isMobile) {
     return IntercambistasFilters(
       isMobile: isMobile,
       filtroStatus: _filtroStatus,
       filtroHospedagem: _filtroHospedagem,
-      filtroArea: _filtroArea, 
+      filtroArea: _filtroArea,
       filtroDataInicio: _filtroDataInicio,
       filtroDataTermino: _filtroDataTermino,
       onStatusChanged: (v) {
@@ -252,7 +373,6 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
         _atualizarTela();
       },
       onAreaChanged: (v) {
-        // NOVO
         _filtroArea = v;
         _atualizarTela();
       },
@@ -263,7 +383,7 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
       onClear: () {
         _filtroStatus = null;
         _filtroHospedagem = 'Todos';
-        _filtroArea = null; 
+        _filtroArea = null;
         _filtroDataInicio = null;
         _filtroDataTermino = null;
         _atualizarTela();

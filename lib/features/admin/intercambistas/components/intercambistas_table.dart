@@ -6,6 +6,7 @@ import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/core/utils/snackbar.dart';
 import 'package:aiesec_lar_global/core/utils/csv_exporter.dart';
 import 'package:aiesec_lar_global/data/models/intercambista/intercambista.dart';
+import 'package:aiesec_lar_global/data/services/aplicacao_service.dart'; // NOVO IMPORT!
 
 class IntercambistasTable extends StatelessWidget {
   final bool isMobile;
@@ -61,7 +62,6 @@ class IntercambistasTable extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _borderColor),
-        // Sombra super suave para dar destaque sobre o fundo branco
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -155,9 +155,10 @@ class IntercambistasTable extends StatelessWidget {
           else
             LayoutBuilder(
               builder: (context, constraints) {
+                // Aumentei o minWidth para acomodar bem a nova coluna
                 final double availableWidth = max(
                   constraints.maxWidth - 48,
-                  750.0,
+                  900.0,
                 );
 
                 return SingleChildScrollView(
@@ -175,34 +176,40 @@ class IntercambistasTable extends StatelessWidget {
                       columns: [
                         DataColumn(
                           label: SizedBox(
-                            width: availableWidth * 0.28,
+                            width: availableWidth * 0.22,
                             child: const Text('NOME DO EP'),
                           ),
                         ),
                         DataColumn(
                           label: SizedBox(
-                            width: availableWidth * 0.15,
+                            width: availableWidth * 0.12,
                             child: const Text('PAÍS'),
                           ),
                         ),
                         DataColumn(
                           label: SizedBox(
-                            width: availableWidth * 0.12,
+                            width: availableWidth * 0.11,
                             child: const Text('STATUS'),
                           ),
                         ),
                         DataColumn(
                           label: SizedBox(
-                            width: availableWidth * 0.12,
+                            width: availableWidth * 0.10,
                             child: const Text('PRECISA HOST'),
                           ),
                         ),
                         DataColumn(
                           label: SizedBox(
-                            width: availableWidth * 0.18,
+                            width: availableWidth * 0.16,
                             child: const Text('PERÍODO (PODIO)'),
                           ),
                         ),
+                        DataColumn(
+                          label: SizedBox(
+                            width: availableWidth * 0.14,
+                            child: const Text('INTERESSADOS'),
+                          ),
+                        ), // NOVA COLUNA
                         const DataColumn(label: Text('AÇÕES')),
                       ],
                       rows: paginatedList
@@ -252,7 +259,7 @@ class IntercambistasTable extends StatelessWidget {
       cells: [
         DataCell(
           SizedBox(
-            width: width * 0.28,
+            width: width * 0.22,
             child: Row(
               children: [
                 CircleAvatar(
@@ -284,7 +291,7 @@ class IntercambistasTable extends StatelessWidget {
         ),
         DataCell(
           SizedBox(
-            width: width * 0.15,
+            width: width * 0.12,
             child: Text(
               ep.pais ?? ep.entidadeAbroad,
               overflow: TextOverflow.ellipsis,
@@ -294,7 +301,7 @@ class IntercambistasTable extends StatelessWidget {
         ),
         DataCell(
           SizedBox(
-            width: width * 0.12,
+            width: width * 0.11,
             child: Align(
               alignment: Alignment.centerLeft,
               child: Container(
@@ -317,7 +324,7 @@ class IntercambistasTable extends StatelessWidget {
         ),
         DataCell(
           SizedBox(
-            width: width * 0.12,
+            width: width * 0.10,
             child: Text(
               ep.precisaHospedagem ? "Sim" : "Não",
               style: _cellTextStyle,
@@ -326,10 +333,58 @@ class IntercambistasTable extends StatelessWidget {
         ),
         DataCell(
           SizedBox(
-            width: width * 0.18,
+            width: width * 0.16,
             child: Text(
               "${_formatDate(DateTime.tryParse(ep.dataRePresencial) ?? DateTime.now())} - ${_formatDate(DateTime.tryParse(ep.dataFinPresencial) ?? DateTime.now())}",
               style: _cellTextStyle,
+            ),
+          ),
+        ),
+        // --- NOVA CÉLULA: CONTAGEM DE INTERESSADOS ---
+        DataCell(
+          SizedBox(
+            width: width * 0.14,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FutureBuilder<int>(
+                future: AplicacaoService.instance.getQuantidadeAplicacoesAtivas(
+                  ep.epId,
+                ),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    );
+                  }
+
+                  final qtd = snapshot.data ?? 0;
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: qtd > 0
+                          ? Colors.green.shade50
+                          : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      "$qtd aplicantes",
+                      style: TextStyle(
+                        color: qtd > 0
+                            ? Colors.green.shade700
+                            : Colors.red.shade700,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ),

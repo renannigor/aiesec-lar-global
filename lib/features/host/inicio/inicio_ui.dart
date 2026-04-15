@@ -6,8 +6,8 @@ import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/data/models/intercambista/intercambista.dart';
 import 'package:aiesec_lar_global/data/services/intercambista_service.dart';
 
-import 'package:aiesec_lar_global/features/host/inicio/widgets/inicio_header.dart';
-import 'package:aiesec_lar_global/features/host/inicio/widgets/secao_motivos_hospedar.dart';
+import 'package:aiesec_lar_global/features/host/inicio/components/inicio_header.dart';
+import 'package:aiesec_lar_global/features/host/inicio/components/secao_motivos_hospedar.dart';
 import 'widgets/intercambista_card.dart';
 import 'inicio_constantes.dart';
 

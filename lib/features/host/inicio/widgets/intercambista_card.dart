@@ -14,8 +14,6 @@ import 'package:aiesec_lar_global/data/services/usuario_service.dart';
 import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/data/models/intercambista/intercambista.dart';
 
-// Importando a tela de detalhes para abri-la diretamente do card
-
 class IntercambistaCard extends StatefulWidget {
   final Intercambista intercambista;
   final VoidCallback onInteresseSalvo;
@@ -67,13 +65,12 @@ class _IntercambistaCardState extends State<IntercambistaCard> {
       if (usuario != null) {
         final progresso = usuario.progressoPreenchimento;
         if (progresso < 0.80) {
-          // Calcula quanto falta para exibir uma mensagem mais amigável
           final atual = (progresso * 100).toInt();
           SnackbarUtils.showError(
             "Seu perfil está $atual% completo. Preencha pelo menos 80% na aba 'Meu Perfil' para demonstrar interesse!",
           );
           setState(() => _isProcessing = false);
-          return; // Para a execução aqui e não registra o interesse
+          return;
         }
       }
 
@@ -107,7 +104,7 @@ class _IntercambistaCardState extends State<IntercambistaCard> {
 
         if (mounted) {
           SnackbarUtils.showSuccess("Interesse manifestado para ${ep.nome}!");
-          widget.onInteresseSalvo(); // REDIRECIONA
+          widget.onInteresseSalvo();
         }
       } else {
         final aplicacaoExistente = aplicacoes.first;
@@ -120,10 +117,9 @@ class _IntercambistaCardState extends State<IntercambistaCard> {
 
           if (mounted) {
             SnackbarUtils.showSuccess("Interesse retomado para ${ep.nome}!");
-            widget.onInteresseSalvo(); // REDIRECIONA TBM!
+            widget.onInteresseSalvo();
           }
         } else {
-          // Cancela se já estava ativo
           await AplicacaoService.instance.atualizarStatusAplicacao(
             aplicacaoId: aplicacaoExistente.aplicacaoId,
             novoStatus: StatusAplicacao.cancelada,
@@ -179,7 +175,7 @@ class _IntercambistaCardState extends State<IntercambistaCard> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -188,52 +184,43 @@ class _IntercambistaCardState extends State<IntercambistaCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Container(
-              height: 140,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.05),
-              ),
-              child: Icon(
-                Icons.person_outline,
-                size: 80,
-                color: AppColors.primary.withValues(alpha: 0.2),
-              ),
-            ),
-          ),
+          // --- CORPO DE INFORMAÇÕES (Sem o cabeçalho) ---
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(
+                20.0,
+              ), 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     ep.nome,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
+
                   Row(
                     children: [
                       Icon(
                         Icons.flight_takeoff,
                         size: 14,
-                        color: Colors.grey.shade600,
+                        color: Colors.grey.shade500,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          "${ep.pais ?? ep.entidadeAbroad} • ${ep.comite}",
+                          "${(ep.pais ?? ep.entidadeAbroad).toUpperCase()} • ${ep.comite.toUpperCase()}",
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade500,
+                            letterSpacing: 0.5,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -241,15 +228,17 @@ class _IntercambistaCardState extends State<IntercambistaCard> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 16),
+
+                  // TAG
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: 10,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
                       color: statusBgColor,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -258,30 +247,35 @@ class _IntercambistaCardState extends State<IntercambistaCard> {
                           precisaHospedagem
                               ? Icons.home_work_outlined
                               : Icons.check_circle_outline,
-                          size: 12,
+                          size: 14,
                           color: statusColor,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 6),
                         Text(
                           precisaHospedagem
                               ? "Precisa de Host"
                               : "Acomodação OK",
                           style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
                             color: statusColor,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const Spacer(),
+
+                  const Spacer(), 
+                  // CAIXA DE DATAS
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade100),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -306,71 +300,76 @@ class _IntercambistaCardState extends State<IntercambistaCard> {
             ),
           ),
 
-          // --- 3. RODAPÉ COM BOTÕES ---
+          // --- RODAPÉ COM BOTÕES ---
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: _abrirDetalhes,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: _abrirDetalhes,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      "Ver Detalhes",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                      child: const Text(
+                        "Ver Detalhes",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
 
+                // BOTÃO HOSPEDAR (Quadrado)
                 Tooltip(
                   message: "Demonstrar Interesse",
-                  child: InkWell(
-                    onTap: _isProcessing ? null : _toggleInteresse,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    height: 54,
+                    width: 72,
+                    child: OutlinedButton(
+                      onPressed: _isProcessing ? null : _toggleInteresse,
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        side: BorderSide(color: Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      child: Column(
-                        children: [
-                          if (_isProcessing)
-                            const SizedBox(
-                              width: 24,
-                              height: 24,
+                      child: _isProcessing
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          else
-                            Icon(
-                              Icons.other_houses_outlined,
-                              color: Colors.grey.shade600,
-                              size: 24,
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.other_houses_outlined,
+                                  color: Colors.grey.shade700,
+                                  size: 22,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "Hospedar",
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
                             ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Hospedar",
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ),
@@ -383,6 +382,7 @@ class _IntercambistaCardState extends State<IntercambistaCard> {
   }
 }
 
+// Sub-widget de colunas de data
 class _DataColumn extends StatelessWidget {
   final String label;
   final String data;
@@ -396,7 +396,7 @@ class _DataColumn extends StatelessWidget {
         Text(
           label.toUpperCase(),
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.bold,
             color: Colors.grey.shade500,
           ),
@@ -405,7 +405,7 @@ class _DataColumn extends StatelessWidget {
         Text(
           data,
           style: const TextStyle(
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
             color: Colors.black87,
           ),
