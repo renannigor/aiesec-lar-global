@@ -40,10 +40,12 @@ class Usuario {
   Usuario.fromJson(Map<String, dynamic> json, {required String id})
     : this(
         uid: id,
-        email: json['email']! as String,
-        nome: json['nome']! as String,
-        fotoPerfilUrl: json['fotoPerfilUrl']! as String,
-        criadoEm: (json['criadoEm']! as Timestamp).toDate(),
+        email: json['email'] as String? ?? 'E-mail não informado',
+        nome: json['nome'] as String? ?? 'Usuário Desconhecido',
+        fotoPerfilUrl: json['fotoPerfilUrl'] as String? ?? '',
+        criadoEm: json['criadoEm'] != null
+            ? (json['criadoEm'] as Timestamp).toDate()
+            : DateTime.now(),
         perfil: _perfilFromString(json['perfil'] as String?),
 
         aiesecMaisProxima: json['aiesecMaisProxima'] as String?,

@@ -22,32 +22,44 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<AcessoUsuario?>(
       stream: AcessoService.instance.getAcessoStream(uid: firebaseUser.uid),
       builder: (context, acessoSnapshot) {
+        Widget
+        screenToDisplay; // Variável para segurar a tela que será mostrada
+
         if (acessoSnapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
+          screenToDisplay = const Scaffold(
+            key: ValueKey('loading'), // Chave de identificação
             body: Center(child: CircularProgressIndicator()),
           );
-        }
-
-        if (acessoSnapshot.hasError) {
+        } else if (acessoSnapshot.hasError) {
           print('🚨 ERRO NO STREAM DE ACESSO: ${acessoSnapshot.error}');
-        }
-
-        // Se NÃO existir um documento na coleção 'acessos', ele é obrigatoriamente um HOST
-        if (!acessoSnapshot.hasData || acessoSnapshot.data == null) {
-          print(
-            'Nenhum acesso encontrado para ${firebaseUser.uid}, abrindo HostUI',
+          screenToDisplay = Scaffold(
+            key: const ValueKey('error'),
+            body: Center(child: Text("Erro: ${acessoSnapshot.error}")),
           );
-          return const HostUI();
+        }
+        // Se NÃO existir um documento na coleção 'acessos', ele é obrigatoriamente um HOST
+        else if (!acessoSnapshot.hasData || acessoSnapshot.data == null) {
+          screenToDisplay = const HostUI(key: ValueKey('host'));
+        }
+        // Se existir, verificamos o papel real definido pelo Superadmin
+        else {
+          final acesso = acessoSnapshot.data!;
+          switch (acesso.papel) {
+            case PapelAcesso.admin:
+              screenToDisplay = const AdminUI(key: ValueKey('admin'));
+              break;
+            case PapelAcesso.superadmin:
+              screenToDisplay = const SuperAdminUI(key: ValueKey('superadmin'));
+              break;
+          }
         }
 
-        // Se existir, verificamos o papel real definido pelo Superadmin
-        final acesso = acessoSnapshot.data!;
-        switch (acesso.papel) {
-          case PapelAcesso.admin:
-            return const AdminUI();
-          case PapelAcesso.superadmin:
-            return const SuperAdminUI();
-        }
+        // O AnimatedSwitcher resolve o bug "!isDisposed" da web
+        // Ele força a árvore de widgets a ser desmontada com cuidado.
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: screenToDisplay,
+        );
       },
     );
   }

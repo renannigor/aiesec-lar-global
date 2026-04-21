@@ -8,13 +8,11 @@ import 'package:aiesec_lar_global/data/services/acesso_service.dart';
 
 class DropdownPerfil extends StatelessWidget {
   final Usuario usuario;
-  final Function(Usuario) onUpdate;
   final bool isDisabled;
 
   const DropdownPerfil({
     super.key,
     required this.usuario,
-    required this.onUpdate,
     this.isDisabled = false,
   });
 
@@ -32,19 +30,25 @@ class DropdownPerfil extends StatelessWidget {
     }
 
     return SizedBox(
-      width: 140, // Controla a largura dentro da tabela
+      width: 140,
       child: Selector<PerfilUsuario>(
-        isFilter: true, // Usa o estilo de borda fina
+        isFilter: true,
         value: usuario.perfil,
         items: PerfilUsuario.values,
         itemLabelBuilder: (p) => p.name.toUpperCase(),
         onChanged: (novoPerfil) async {
           if (novoPerfil != null) {
-            // Agora manipulamos 'aiesecMaisProxima' em vez do ID
             String? novoComiteNome = usuario.aiesecMaisProxima;
+            String? comiteIdParaAcesso;
 
             if (novoPerfil != PerfilUsuario.admin) {
-              novoComiteNome = null; // Remove o comitê se não for admin
+              novoComiteNome = null;
+              comiteIdParaAcesso = null;
+            } else {
+              // Ao ser promovido para Admin, mantemos o Nome no perfil dele,
+              // mas forçamos o ID do Acesso a nascer nulo para que o SuperAdmin
+              // seja obrigado a escolher no segundo dropdown e gravar o ID correto.
+              comiteIdParaAcesso = null;
             }
 
             final atualizado = usuario.copyWith(
@@ -66,16 +70,13 @@ class DropdownPerfil extends StatelessWidget {
               final novoAcesso = AcessoUsuario(
                 uid: usuario.uid,
                 papel: papel,
-                comiteGerenciado:
-                    novoComiteNome, // O Acesso agora guarda o Nome Único
+                comiteGerenciado: comiteIdParaAcesso,
                 concedidoEm: DateTime.now(),
               );
               await AcessoService.instance.definirAcesso(acesso: novoAcesso);
             } else {
               await AcessoService.instance.removerAcesso(uid: usuario.uid);
             }
-
-            onUpdate(atualizado);
           }
         },
       ),

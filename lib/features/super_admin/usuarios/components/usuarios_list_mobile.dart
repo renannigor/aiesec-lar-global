@@ -11,18 +11,28 @@ class UsuariosListMobile extends StatelessWidget {
   final List<Usuario> usuarios;
   final List<ComiteLocal> comites;
   final String? currentUserId;
-  final Function(Usuario) onUpdateUser;
   final bool isLoading;
-  final Widget? loadMoreButton;
+
+  // Paginação
+  final int totalItems;
+  final int totalPages;
+  final int currentPage;
+  final int startIndex;
+  final int endIndex;
+  final Function(int) onPageChanged;
 
   const UsuariosListMobile({
     super.key,
     required this.usuarios,
     required this.comites,
     required this.currentUserId,
-    required this.onUpdateUser,
     required this.isLoading,
-    this.loadMoreButton,
+    required this.totalItems,
+    required this.totalPages,
+    required this.currentPage,
+    required this.startIndex,
+    required this.endIndex,
+    required this.onPageChanged,
   });
 
   String _formatDate(DateTime date) => DateFormat('dd/MM/yyyy').format(date);
@@ -33,10 +43,11 @@ class UsuariosListMobile extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (usuarios.isEmpty) {
-      return const Center(child: Text("Nenhum usuário encontrado."));
+      return const Center(child: Text("Nenhum usuário encontrado na busca."));
     }
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ListView.separated(
           shrinkWrap: true,
@@ -45,8 +56,7 @@ class UsuariosListMobile extends StatelessWidget {
           separatorBuilder: (ctx, i) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final usuario = usuarios[index];
-            final isMe =
-                usuario.uid == currentUserId; // <--- IDENTIFICA O LOGADO
+            final isMe = usuario.uid == currentUserId;
 
             return Container(
               padding: const EdgeInsets.all(16),
@@ -67,9 +77,8 @@ class UsuariosListMobile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      // --- APLICAÇÃO DO ERROR BUILDER NO MOBILE ---
                       Container(
-                        width: 40, // Equivalente ao radius 20
+                        width: 40,
                         height: 40,
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.1),
@@ -80,37 +89,12 @@ class UsuariosListMobile extends StatelessWidget {
                               ? Image.network(
                                   usuario.fotoPerfilUrl,
                                   fit: BoxFit.cover,
-                                  // Captura falhas (ex: Erro 429) e exibe as iniciais
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Text(
-                                        usuario.nome.isNotEmpty
-                                            ? usuario.nome[0].toUpperCase()
-                                            : '?',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.primary,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                  errorBuilder: (_, __, ___) =>
+                                      _buildInitials(usuario),
                                 )
-                              : Center(
-                                  child: Text(
-                                    usuario.nome.isNotEmpty
-                                        ? usuario.nome[0].toUpperCase()
-                                        : '?',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
+                              : _buildInitials(usuario),
                         ),
                       ),
-                      // --------------------------------------------
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -160,11 +144,7 @@ class UsuariosListMobile extends StatelessWidget {
                                 color: Colors.grey,
                               ),
                             ),
-                            DropdownPerfil(
-                              usuario: usuario,
-                              onUpdate: onUpdateUser,
-                              isDisabled: isMe, // <--- PASSA O BLOQUEIO
-                            ),
+                            DropdownPerfil(usuario: usuario, isDisabled: isMe),
                           ],
                         ),
                       ),
@@ -183,8 +163,7 @@ class UsuariosListMobile extends StatelessWidget {
                             DropdownComite(
                               usuario: usuario,
                               comites: comites,
-                              onUpdate: onUpdateUser,
-                              isDisabled: isMe, // <--- PASSA O BLOQUEIO
+                              isDisabled: isMe,
                             ),
                           ],
                         ),
@@ -196,9 +175,69 @@ class UsuariosListMobile extends StatelessWidget {
             );
           },
         ),
-        const SizedBox(height: 24),
-        if (loadMoreButton != null) loadMoreButton!,
+
+        // --- RODAPÉ DE PAGINAÇÃO MOBILE ---
+        if (totalPages > 1) ...[
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  "Mostrando ${startIndex + 1} a $endIndex de $totalItems resultados",
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left, size: 24),
+                      onPressed: currentPage > 1
+                          ? () => onPageChanged(currentPage - 1)
+                          : null,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        "$currentPage / $totalPages",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right, size: 24),
+                      onPressed: currentPage < totalPages
+                          ? () => onPageChanged(currentPage + 1)
+                          : null,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  Widget _buildInitials(Usuario usuario) {
+    return Center(
+      child: Text(
+        usuario.nome.isNotEmpty ? usuario.nome[0].toUpperCase() : '?',
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: AppColors.primary,
+          fontSize: 16,
+        ),
+      ),
     );
   }
 }

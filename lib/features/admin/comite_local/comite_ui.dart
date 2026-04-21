@@ -81,11 +81,15 @@ class _ComiteUIState extends State<ComiteUI> {
           .first;
       final comiteId = acesso?.comiteGerenciado;
 
+      print("DEBUG: Acesso do usuário $uid ao comitê $comiteId");
+
       if (comiteId == null) throw Exception("Você não gerencia nenhum comitê.");
 
       final comiteLocal = await ComiteLocalService.instance.getComiteLocal(
         comiteId: comiteId,
       );
+
+      print("DEBUG: Dados do comitê local carregados: ${comiteLocal?.toJson()}");
 
       if (comiteLocal == null) {
         throw Exception("Dados do comitê não encontrados no banco.");

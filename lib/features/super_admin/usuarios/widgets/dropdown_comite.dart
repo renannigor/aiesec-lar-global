@@ -10,29 +10,39 @@ import 'package:aiesec_lar_global/data/services/acesso_service.dart';
 class DropdownComite extends StatelessWidget {
   final Usuario usuario;
   final List<ComiteLocal> comites;
-  final Function(Usuario) onUpdate;
   final bool isDisabled;
 
   const DropdownComite({
     super.key,
     required this.usuario,
     required this.comites,
-    required this.onUpdate,
     this.isDisabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    // 1. Se não for Admin/Superadmin, exibe apenas um traço
     if (usuario.perfil != PerfilUsuario.admin) {
       return Text("-", style: TextStyle(color: Colors.grey[400]));
     }
 
+    // 2. Busca o objeto ComiteLocal comparando o NOME salvo no usuário
+    ComiteLocal? comiteAtual;
+    try {
+      comiteAtual = comites.firstWhere(
+        (c) => c.nome == usuario.aiesecMaisProxima,
+      );
+    } catch (_) {
+      comiteAtual = null; // Caso esteja vazio ou com nome incorreto
+    }
+
+    // 3. Estado bloqueado (somente leitura)
     if (isDisabled) {
-      // Como aiesecMaisProxima já é o nome único, não precisamos mais fazer o filtro (.where)
-      final comiteNome = usuario.aiesecMaisProxima ?? "Não definido";
+      final comiteNomeDisplay =
+          comiteAtual?.nome ?? usuario.aiesecMaisProxima ?? "Não definido";
 
       return Text(
-        comiteNome,
+        comiteNomeDisplay,
         style: TextStyle(
           fontSize: 13,
           color: Colors.grey.shade500,
@@ -42,25 +52,31 @@ class DropdownComite extends StatelessWidget {
       );
     }
 
+    // 4. Dropdown Dinâmico (Usa o objeto inteiro ComiteLocal)
     return SizedBox(
-      width: 180, // Controla a largura dentro da tabela
-      child: Selector<String>(
-        isFilter: true, // Usa o estilo de borda fina
-        value: usuario.aiesecMaisProxima, // Lê do campo correto
-        // Extrai apenas a lista de NOMES dos comitês para o menu
-        items: comites.map((c) => c.nome).toList(),
+      width: 180,
+      child: Selector<ComiteLocal>(
+        isFilter: true,
+        value: comiteAtual, // Passa o objeto como valor inicial
+        items: comites, // Passa a lista de objetos
+        itemLabelBuilder: (comite) =>
+            comite.nome, // Diz pro Selector exibir o nome na tela
+        onChanged: (ComiteLocal? comiteSelecionado) async {
+          if (comiteSelecionado == null || comiteSelecionado.comiteId == null) {
+            return;
+          }
 
-        // Como 'items' já são Strings (nomes), apenas retornamos o próprio valor
-        itemLabelBuilder: (nome) => nome,
+          // Separamos as variáveis!
+          final String novoNomeComite = comiteSelecionado.nome;
+          final String novoIdComite = comiteSelecionado.comiteId!;
 
-        onChanged: (novoNome) async {
-          if (novoNome == null) return;
-
-          // Atualiza o nome do comitê no model
-          final atualizado = usuario.copyWith(aiesecMaisProxima: novoNome);
-
+          // SALVA O NOME no perfil do Usuário
+          final atualizado = usuario.copyWith(
+            aiesecMaisProxima: novoNomeComite,
+          );
           await UsuarioService.instance.atualizarUsuario(usuario: atualizado);
 
+          // SALVA O ID na tabela de Acessos
           final papel = usuario.perfil.name.toLowerCase() == 'superadmin'
               ? PapelAcesso.superadmin
               : PapelAcesso.admin;
@@ -68,14 +84,11 @@ class DropdownComite extends StatelessWidget {
           final acessoAtualizado = AcessoUsuario(
             uid: usuario.uid,
             papel: papel,
-            comiteGerenciado:
-                novoNome, // Atualiza a permissão de Acesso com o nome
+            comiteGerenciado: novoIdComite,
             concedidoEm: DateTime.now(),
           );
 
           await AcessoService.instance.definirAcesso(acesso: acessoAtualizado);
-
-          onUpdate(atualizado);
         },
       ),
     );
