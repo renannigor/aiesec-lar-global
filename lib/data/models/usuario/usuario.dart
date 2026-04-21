@@ -189,82 +189,125 @@ class Usuario {
     int totalCampos = 0;
     int camposPreenchidos = 0;
 
-    // Função auxiliar para checar se o campo tem valor
-    void checarCampo(Object? valor) {
+    // Função auxiliar com DEBUG para identificar o campo faltante
+    void checarCampo(String nomeCampo, Object? valor) {
       totalCampos++;
+      bool isPreenchido = false;
+
       if (valor != null) {
-        if (valor is String && valor.trim().isNotEmpty) {
-          camposPreenchidos++;
-        } else if (valor is List && valor.isNotEmpty) {
-          camposPreenchidos++;
-        } else if (valor is! String && valor is! List) {
-          camposPreenchidos++; // Para booleanos, inteiros, etc.
+        if (valor is String) {
+          if (valor.trim().isNotEmpty) isPreenchido = true;
+        } else if (valor is List) {
+          if (valor.isNotEmpty) isPreenchido = true;
+        } else {
+          // Booleanos, Inteiros, DateTime, Objetos (Endereco)
+          isPreenchido = true;
         }
+      }
+
+      if (isPreenchido) {
+        camposPreenchidos++;
+      } else {
+        // VAI PRINTAR EXATAMENTE O CAMPO QUE FALTA
+        print('⚠️ ATENÇÃO: O campo "$nomeCampo" está vazio ou nulo!');
       }
     }
 
     // 1. Dados Básicos / CRM
-    checarCampo(cpf); // <--- CAMPO DE CPF ADICIONADO AQUI
-    checarCampo(telefone);
-    checarCampo(aiesecMaisProxima);
-    checarCampo(comoPrefereSerContactado);
-    checarCampo(comoConheceuAiesec);
-    checarCampo(dataNascimento);
-    checarCampo(sexo);
-    checarCampo(estadoCivil);
-    checarCampo(profissao);
-    checarCampo(restricaoAlimentarPropria);
-    checarCampo(porQueHospedar);
-    checarCampo(expectativasIntercambista);
-    checarCampo(endereco);
+    checarCampo('cpf', cpf);
+    checarCampo('telefone', telefone);
+    checarCampo('aiesecMaisProxima', aiesecMaisProxima);
+    checarCampo('comoPrefereSerContactado', comoPrefereSerContactado);
+    checarCampo('comoConheceuAiesec', comoConheceuAiesec);
+    checarCampo('dataNascimento', dataNascimento);
+    checarCampo('sexo', sexo);
+    checarCampo('estadoCivil', estadoCivil);
+    checarCampo('profissao', profissao);
+    checarCampo('restricaoAlimentarPropria', restricaoAlimentarPropria);
+    checarCampo('porQueHospedar', porQueHospedar);
+    checarCampo('expectativasIntercambista', expectativasIntercambista);
+
+    // Checagem profunda do Endereço
+    if (endereco != null) {
+      checarCampo('endereco.cep', endereco!.cep);
+      checarCampo('endereco.logradouro', endereco!.logradouro);
+      checarCampo('endereco.numero', endereco!.numero);
+      checarCampo('endereco.bairro', endereco!.bairro);
+      checarCampo('endereco.cidade', endereco!.cidade);
+      checarCampo('endereco.estado', endereco!.estado);
+    } else {
+      totalCampos += 6;
+      print('⚠️ ATENÇÃO: O bloco inteiro de "Endereco" está nulo!');
+    }
 
     // 2. Detalhes da Hospedagem
     if (detalhesHospedagem != null) {
-      checarCampo(detalhesHospedagem!.localDormir);
-      checarCampo(detalhesHospedagem!.tipoQuarto);
+      checarCampo(
+        'podeOferecerAcomodacao',
+        detalhesHospedagem!.podeOferecerAcomodacao,
+      );
+      checarCampo('localDormir', detalhesHospedagem!.localDormir);
+      checarCampo('tipoQuarto', detalhesHospedagem!.tipoQuarto);
 
-      // CAMPO CONDICIONAL: Só checa com quem compartilha se o quarto for compartilhado
       if (detalhesHospedagem!.tipoQuarto == 'Compartilhado') {
-        checarCampo(detalhesHospedagem!.quartoCompartilhadoCom);
+        checarCampo(
+          'quartoCompartilhadoCom',
+          detalhesHospedagem!.quartoCompartilhadoCom,
+        );
       }
 
-      checarCampo(detalhesHospedagem!.acessoAreasComuns);
-      checarCampo(detalhesHospedagem!.acessoAguaEnergia);
-      checarCampo(detalhesHospedagem!.refeicoesOferecidas);
-      checarCampo(detalhesHospedagem!.maxIntercambistas);
-      checarCampo(detalhesHospedagem!.periodoHospedagem);
-      checarCampo(detalhesHospedagem!.temAnimais);
-      checarCampo(detalhesHospedagem!.descricaoMoradores);
+      checarCampo('acessoAreasComuns', detalhesHospedagem!.acessoAreasComuns);
+      checarCampo('acessoAguaEnergia', detalhesHospedagem!.acessoAguaEnergia);
+      checarCampo(
+        'refeicoesOferecidas',
+        detalhesHospedagem!.refeicoesOferecidas,
+      );
+      checarCampo('maxIntercambistas', detalhesHospedagem!.maxIntercambistas);
+      checarCampo('periodoHospedagem', detalhesHospedagem!.periodoHospedagem);
+      checarCampo('temAnimais', detalhesHospedagem!.temAnimais);
+      checarCampo('descricaoMoradores', detalhesHospedagem!.descricaoMoradores);
 
-      // CAMPO CONDICIONAL: Só checa os detalhes dos animais se a pessoa disser que tem
       if (detalhesHospedagem!.temAnimais == true) {
-        checarCampo(detalhesHospedagem!.detalhesAnimais);
+        checarCampo('detalhesAnimais', detalhesHospedagem!.detalhesAnimais);
       }
 
-      checarCampo(detalhesHospedagem!.comodidadesProximas);
+      checarCampo(
+        'comodidadesProximas',
+        detalhesHospedagem!.comodidadesProximas,
+      );
     } else {
-      // Peso base se a aba nunca foi tocada (assumindo que as condicionais são falsas inicialmente)
-      totalCampos += 10;
+      totalCampos += 11;
+      print('⚠️ ATENÇÃO: O bloco inteiro de "DetalhesHospedagem" está nulo!');
     }
 
     // 3. Preferências de Hospedagem
     if (preferenciasHospedagem != null) {
-      checarCampo(preferenciasHospedagem!.restricaoFumantes);
-      checarCampo(preferenciasHospedagem!.aceitaRestricaoAlimentar);
-      checarCampo(preferenciasHospedagem!.preferenciaSexo);
-      checarCampo(preferenciasHospedagem!.preferenciaMeses);
-      checarCampo(preferenciasHospedagem!.preferenciaIdiomas);
+      checarCampo(
+        'restricaoFumantes',
+        preferenciasHospedagem!.restricaoFumantes,
+      );
+      checarCampo(
+        'aceitaRestricaoAlimentar',
+        preferenciasHospedagem!.aceitaRestricaoAlimentar,
+      );
+      checarCampo('preferenciaSexo', preferenciasHospedagem!.preferenciaSexo);
+      checarCampo('preferenciaMeses', preferenciasHospedagem!.preferenciaMeses);
+      checarCampo(
+        'preferenciaIdiomas',
+        preferenciasHospedagem!.preferenciaIdiomas,
+      );
 
-      // CAMPO CONDICIONAL: Só checa o campo de texto 'outros' se ele escolheu 'Outros' na lista
       if (preferenciasHospedagem!.preferenciaIdiomas.contains('Outros')) {
-        checarCampo(preferenciasHospedagem!.outrosIdiomas);
+        checarCampo('outrosIdiomas', preferenciasHospedagem!.outrosIdiomas);
       }
     } else {
-      // Peso base se a aba nunca foi tocada
       totalCampos += 5;
+      print(
+        '⚠️ ATENÇÃO: O bloco inteiro de "PreferenciasHospedagem" está nulo!',
+      );
     }
 
-    if (totalCampos == 0) return 0.0; // Prevenção de divisão por zero
+    if (totalCampos == 0) return 0.0;
 
     print('Campos preenchidos: $camposPreenchidos / $totalCampos');
 

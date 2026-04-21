@@ -23,7 +23,7 @@ class FormDetalhesHospedagem extends StatefulWidget {
 class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
   late bool podeOferecer;
   String? localDormir;
-  bool? acessoAguaEnergia;
+  late bool acessoAguaEnergia;
   late String tipoQuarto;
   late TextEditingController quartoCompartilhadoInfo;
   late bool acessoAreas;
@@ -44,12 +44,12 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
           podeOferecerAcomodacao: false,
           tipoQuarto: 'Individual',
           acessoAreasComuns: true,
+          acessoAguaEnergia: true,
           refeicoesOferecidas: '1 alimentação',
           maxIntercambistas: '1',
           periodoHospedagem: [],
           temAnimais: false,
           comodidadesProximas: [],
-          fotosUrl: [],
           descricaoMoradores: "",
         );
 
@@ -88,7 +88,6 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
       temAnimais: temAnimais,
       detalhesAnimais: temAnimais ? detalhesAnimaisInfo.text : null,
       comodidadesProximas: comodidades,
-      fotosUrl: widget.detalhesAtual?.fotosUrl ?? [],
       descricaoMoradores: moradoresController.text,
     );
 
@@ -124,7 +123,7 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
         // NOVO
         BooleanSelector(
           labelText: "Pode oferecer acesso a água e energia de forma gratuita?",
-          value: acessoAguaEnergia ?? true, // Default
+          value: acessoAguaEnergia,
           onChanged: (val) {
             setState(() => acessoAguaEnergia = val);
             _atualizar();

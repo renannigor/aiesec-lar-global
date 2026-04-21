@@ -291,7 +291,7 @@ class PodioService {
           continue;
         }
 
-        // Salva no banco de dados
+        // Salva/Atualiza no banco de dados (Upsert)
         await IntercambistaService.instance.salvarIntercambista(
           intercambista: novoEp,
         );
