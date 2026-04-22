@@ -16,6 +16,7 @@ class Usuario {
     // --- Campos de Informação Básica / CRM ---
     this.aiesecMaisProxima,
     this.cpf,
+    this.rg,
     this.comoPrefereSerContactado,
     this.comoConheceuAiesec,
     this.dataNascimento,
@@ -50,6 +51,7 @@ class Usuario {
 
         aiesecMaisProxima: json['aiesecMaisProxima'] as String?,
         cpf: json['cpf'] as String?,
+        rg: json['rg'] as String?,
         comoPrefereSerContactado: json['comoPrefereSerContactado'] as String?,
         comoConheceuAiesec: json['comoConheceuAiesec'] as String?,
         dataNascimento: json['dataNascimento'] == null
@@ -89,6 +91,7 @@ class Usuario {
 
   final String? aiesecMaisProxima;
   final String? cpf;
+  final String? rg;
   final String? comoPrefereSerContactado;
   final String? comoConheceuAiesec;
   final DateTime? dataNascimento;
@@ -114,6 +117,7 @@ class Usuario {
     PerfilUsuario? perfil,
     String? aiesecMaisProxima,
     String? cpf,
+    String? rg,
     String? comoPrefereSerContactado,
     String? comoConheceuAiesec,
     DateTime? dataNascimento,
@@ -137,6 +141,7 @@ class Usuario {
       perfil: perfil ?? this.perfil,
       aiesecMaisProxima: aiesecMaisProxima ?? this.aiesecMaisProxima,
       cpf: cpf ?? this.cpf,
+      rg: rg ?? this.rg,
       comoPrefereSerContactado:
           comoPrefereSerContactado ?? this.comoPrefereSerContactado,
       comoConheceuAiesec: comoConheceuAiesec ?? this.comoConheceuAiesec,
@@ -166,6 +171,7 @@ class Usuario {
       'perfil': perfil.name,
       'aiesecMaisProxima': aiesecMaisProxima,
       'cpf': cpf,
+      'rg': rg,
       'comoPrefereSerContactado': comoPrefereSerContactado,
       'comoConheceuAiesec': comoConheceuAiesec,
       'dataNascimento': dataNascimento == null
@@ -217,6 +223,7 @@ class Usuario {
 
     // 1. Dados Básicos / CRM
     checarCampo('cpf', cpf);
+    checarCampo('rg', rg);
     checarCampo('telefone', telefone);
     checarCampo('aiesecMaisProxima', aiesecMaisProxima);
     checarCampo('comoPrefereSerContactado', comoPrefereSerContactado);

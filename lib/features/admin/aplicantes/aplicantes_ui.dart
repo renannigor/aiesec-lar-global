@@ -1,4 +1,6 @@
+import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 import 'package:aiesec_lar_global/data/services/intercambista_service.dart';
+import 'package:aiesec_lar_global/data/services/pdf_termo_service.dart';
 import 'package:aiesec_lar_global/features/admin/aplicantes/components/detalhes_host_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -47,20 +49,54 @@ class AplicantesUI extends StatelessWidget {
     }
   }
 
-  // --- LÓGICA DO DIÁLOGO DE REJEIÇÃO EXTERNALIZADA ---
+  // --- LÓGICA DE GERAÇÃO DE PDF (ATUALIZADA) ---
+  Future<void> _gerarPdfTermo(BuildContext context, Aplicacao app) async {
+    try {
+      // 1. Mostra carregamento
+      SnackbarUtils.showInfo("Buscando dados para gerar o PDF...");
+
+      // 2. Busca o Host no Firebase
+      final host = await UsuarioService.instance.getUsuario(uid: app.hostUid);
+      if (host == null) {
+        SnackbarUtils.showError("Erro: Host não encontrado no banco de dados.");
+        return;
+      }
+
+      // 3. Busca o Comitê Local usando o nome do comitê que está na Aplicação
+      final comite = await ComiteLocalService.instance.getComitePorNomePodio(
+        app.comiteLocal,
+      );
+      if (comite == null) {
+        SnackbarUtils.showError(
+          "Erro: Dados do Comitê (${app.comiteLocal}) não encontrados.",
+        );
+        return;
+      }
+
+      // 4. Chama o Service do PDF
+      await PdfTermoService.gerarEImprimirTermo(
+        host: host,
+        ep: intercambista,
+        comite: comite,
+      );
+    } catch (e) {
+      debugPrint("Erro ao gerar PDF: $e");
+      SnackbarUtils.showError("Erro ao gerar o termo: $e");
+    }
+  }
+
+  // --- LÓGICA DO DIÁLOGO DE REJEIÇÃO ---
   Future<void> _processarMudancaStatus(
     BuildContext context,
     Aplicacao app,
     StatusAplicacao novoStatus,
   ) async {
     if (novoStatus == StatusAplicacao.rejeitada) {
-      // Chama o nosso novo Dialog inteligente que retorna o motivo em String
       final motivoRejeicao = await showDialog<String>(
         context: context,
         builder: (context) => const DialogRejeicaoApp(),
       );
 
-      // Se o admin preencheu um motivo e não cancelou o dialog
       if (motivoRejeicao != null && motivoRejeicao.isNotEmpty) {
         await AplicacaoService.instance.atualizarRetornoAplicacao(
           aplicacaoId: app.aplicacaoId,
@@ -70,13 +106,11 @@ class AplicantesUI extends StatelessWidget {
         SnackbarUtils.showSuccess("Candidatura rejeitada com sucesso.");
       }
     } else {
-      // Para os status comuns
       await AplicacaoService.instance.atualizarStatusAplicacao(
         aplicacaoId: app.aplicacaoId,
         novoStatus: novoStatus,
       );
 
-      // Se o status for atualizado para "Hospedando", atualiza o EP para não precisar mais de hospedagem
       if (novoStatus == StatusAplicacao.hospedando) {
         await IntercambistaService.instance.atualizarNecessidadeHospedagem(
           intercambistaId: app.intercambistaId,
@@ -238,6 +272,7 @@ class AplicantesUI extends StatelessWidget {
                           DataColumn(label: Text('MENSAGEM / MOTIVO')),
                           DataColumn(label: Text('STATUS DA APLICAÇÃO')),
                           DataColumn(label: Text('DATA')),
+                          DataColumn(label: Text('TERMO')),
                           DataColumn(label: Text('AÇÕES')),
                         ],
                         rows: aplicacoes.map((app) {
@@ -290,7 +325,7 @@ class AplicantesUI extends StatelessWidget {
                                               ),
                                             ),
                                             Text(
-                                              "${host.endereco!.cidade} - ${host.endereco!.estado}",
+                                              "${host.endereco?.cidade ?? 'Cidade não informada'} - ${host.endereco?.estado ?? ''}",
                                               style: const TextStyle(
                                                 color: Colors.grey,
                                                 fontSize: 11,
@@ -319,7 +354,7 @@ class AplicantesUI extends StatelessWidget {
                                           MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          userSnapshot.data!.telefone!,
+                                          userSnapshot.data!.telefone ?? '-',
                                           style: _cellTextStyle,
                                         ),
                                         Text(
@@ -408,6 +443,25 @@ class AplicantesUI extends StatelessWidget {
                                 ),
                               ),
                               DataCell(
+                                app.status == StatusAplicacao.assinaturaTermo
+                                    ? IconButton(
+                                        icon: const Icon(
+                                          Icons.picture_as_pdf_outlined,
+                                          color: Colors.redAccent,
+                                        ),
+                                        tooltip: 'Gerar Termo de Hospedagem',
+                                        onPressed: () =>
+                                            _gerarPdfTermo(context, app),
+                                        splashRadius: 20,
+                                      )
+                                    : const Center(
+                                        child: Text(
+                                          "-",
+                                          style: TextStyle(color: Colors.grey),
+                                        ),
+                                      ),
+                              ),
+                              DataCell(
                                 FutureBuilder<Usuario?>(
                                   future: UsuarioService.instance.getUsuario(
                                     uid: app.hostUid,
@@ -426,8 +480,9 @@ class AplicantesUI extends StatelessWidget {
                                             size: 20,
                                             color: Colors.green,
                                           ),
-                                          onPressed: () =>
-                                              _abrirWhatsApp(host.telefone!),
+                                          onPressed: () => _abrirWhatsApp(
+                                            host.telefone ?? '',
+                                          ),
                                           splashRadius: 20,
                                         ),
                                         IconButton(

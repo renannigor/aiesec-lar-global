@@ -26,7 +26,8 @@ class FormDadosPessoais extends StatefulWidget {
 
 class _FormDadosPessoaisState extends State<FormDadosPessoais> {
   late TextEditingController nomeController;
-  late TextEditingController cpfController; // <--- NOVO
+  late TextEditingController cpfController;
+  late TextEditingController rgController;
   late TextEditingController telefoneController;
   late TextEditingController profissaoController;
   late TextEditingController dataNascController;
@@ -67,9 +68,8 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
   void initState() {
     super.initState();
     nomeController = TextEditingController(text: widget.usuario.nome);
-    cpfController = TextEditingController(
-      text: widget.usuario.cpf ?? "",
-    ); // <--- NOVO
+    cpfController = TextEditingController(text: widget.usuario.cpf ?? "");
+    rgController = TextEditingController(text: widget.usuario.rg ?? "");
     telefoneController = TextEditingController(
       text: widget.usuario.telefone ?? "",
     );
@@ -104,6 +104,7 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
     // Boa prática: limpar os controllers ao fechar o widget
     nomeController.dispose();
     cpfController.dispose();
+    rgController.dispose();
     telefoneController.dispose();
     profissaoController.dispose();
     dataNascController.dispose();
@@ -147,7 +148,8 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
     widget.onChanged(
       widget.usuario.copyWith(
         nome: nomeController.text,
-        cpf: cpfController.text, // <--- NOVO
+        cpf: cpfController.text,
+        rg: rgController.text,
         telefone: telefoneController.text,
         profissao: profissaoController.text,
         estadoCivil: civil,
@@ -200,6 +202,16 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
           hintText: "000.000.000-00",
           keyboardType: TextInputType.number,
           inputFormatters: [_cpfMaskFormatter],
+          onChanged: (_) => _atualizar(),
+          isPassword: false,
+          enabled: true,
+        ),
+        const SizedBox(height: 24),
+        Editor(
+          controller: rgController,
+          labelText: "RG",
+          hintText: "xxxxxxxx-x",
+          keyboardType: TextInputType.number,
           onChanged: (_) => _atualizar(),
           isPassword: false,
           enabled: true,

@@ -14,7 +14,7 @@ class AcessoUsuario {
   final String uid;
   final PapelAcesso papel;
   final String?
-  comiteGerenciado; // Guarda o ID (ou Nome) do único comitê que ele acessa
+  comiteGerenciado; // Guarda o ID do único comitê que ele acessa
   final DateTime concedidoEm;
 
   factory AcessoUsuario.fromSnapshot(DocumentSnapshot doc) {
