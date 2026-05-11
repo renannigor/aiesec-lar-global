@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:aiesec_lar_global/data/models/usuario/detalhes_hospedagem.dart';
 import 'package:aiesec_lar_global/core/widgets/editor.dart';
 import 'package:aiesec_lar_global/core/widgets/selector.dart';
-import 'package:aiesec_lar_global/core/widgets/boolean_selector.dart';
 import 'package:aiesec_lar_global/core/widgets/multi_select_chips.dart';
-import '../perfil_constantes.dart';
+import 'package:aiesec_lar_global/core/constants/form_constants.dart';
 
 class FormDetalhesHospedagem extends StatefulWidget {
   final DetalhesHospedagem? detalhesAtual;
@@ -21,15 +20,16 @@ class FormDetalhesHospedagem extends StatefulWidget {
 }
 
 class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
-  late bool podeOferecer;
+  String? podeOferecer;
   String? localDormir;
-  late bool acessoAguaEnergia;
-  late String tipoQuarto;
+  String? acessoAguaEnergia;
+  String? tipoQuarto;
   late TextEditingController quartoCompartilhadoInfo;
-  late bool acessoAreas;
-  late String refeicoes;
-  late String maxIntercambistas;
-  late bool temAnimais;
+  String? acessoAreas;
+  String? refeicoes;
+  String? maxIntercambistas;
+  String? temAnimais;
+  String? tempoHospedagem;
   late TextEditingController detalhesAnimaisInfo;
   late List<String> comodidades;
   late List<String> periodos;
@@ -38,20 +38,7 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
   @override
   void initState() {
     super.initState();
-    final d =
-        widget.detalhesAtual ??
-        DetalhesHospedagem(
-          podeOferecerAcomodacao: false,
-          tipoQuarto: 'Individual',
-          acessoAreasComuns: true,
-          acessoAguaEnergia: true,
-          refeicoesOferecidas: '1 alimentação',
-          maxIntercambistas: '1',
-          periodoHospedagem: [],
-          temAnimais: false,
-          comodidadesProximas: [],
-          descricaoMoradores: "",
-        );
+    final d = widget.detalhesAtual ?? DetalhesHospedagem();
 
     podeOferecer = d.podeOferecerAcomodacao;
     localDormir = d.localDormir;
@@ -63,6 +50,7 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
     acessoAreas = d.acessoAreasComuns;
     refeicoes = d.refeicoesOferecidas;
     maxIntercambistas = d.maxIntercambistas;
+    tempoHospedagem = d.tempoHospedagem;
     temAnimais = d.temAnimais;
     detalhesAnimaisInfo = TextEditingController(text: d.detalhesAnimais ?? "");
     comodidades = List.from(d.comodidadesProximas);
@@ -85,8 +73,9 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
       refeicoesOferecidas: refeicoes,
       maxIntercambistas: maxIntercambistas,
       periodoHospedagem: periodos,
+      tempoHospedagem: tempoHospedagem,
       temAnimais: temAnimais,
-      detalhesAnimais: temAnimais ? detalhesAnimaisInfo.text : null,
+      detalhesAnimais: temAnimais == 'Sim' ? detalhesAnimaisInfo.text : null,
       comodidadesProximas: comodidades,
       descricaoMoradores: moradoresController.text,
     );
@@ -110,44 +99,42 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
           enabled: true,
         ),
         const SizedBox(height: 32),
-        BooleanSelector(
+        Selector(
           labelText: "Você pode oferecer acomodação gratuita?",
           value: podeOferecer,
+          items: FormConstants.simNao,
           onChanged: (val) {
             setState(() => podeOferecer = val);
             _atualizar();
           },
         ),
         const SizedBox(height: 24),
-
-        // NOVO
-        BooleanSelector(
+        Selector(
           labelText: "Pode oferecer acesso a água e energia de forma gratuita?",
           value: acessoAguaEnergia,
+          items: FormConstants.simNao,
           onChanged: (val) {
             setState(() => acessoAguaEnergia = val);
             _atualizar();
           },
         ),
         const SizedBox(height: 24),
-
         Selector(
           labelText: "Pode oferecer um local para que o intercambista durma?",
           value: localDormir,
-          items: PerfilConstantes.localDormir,
+          items: FormConstants.localDormir,
           onChanged: (val) {
             setState(() => localDormir = val);
             _atualizar();
           },
         ),
         const SizedBox(height: 24),
-
         Selector(
           labelText: "Qual o tipo de quarto disponível?",
           value: tipoQuarto,
-          items: PerfilConstantes.tipoQuarto,
+          items: FormConstants.tipoQuarto,
           onChanged: (val) {
-            setState(() => tipoQuarto = val!);
+            setState(() => tipoQuarto = val);
             _atualizar();
           },
         ),
@@ -164,9 +151,10 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
           ),
         ],
         const SizedBox(height: 24),
-        BooleanSelector(
+        Selector(
           labelText: "O intercambista terá acesso livre às áreas comuns?",
           value: acessoAreas,
+          items: FormConstants.simNao,
           onChanged: (val) {
             setState(() => acessoAreas = val);
             _atualizar();
@@ -176,24 +164,26 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
         Row(
           children: [
             Expanded(
+              flex: 3,
               child: Selector(
                 labelText: "Refeições (dia)",
                 value: refeicoes,
-                items: PerfilConstantes.refeicoes,
+                items: FormConstants.refeicoes,
                 onChanged: (val) {
-                  setState(() => refeicoes = val!);
+                  setState(() => refeicoes = val);
                   _atualizar();
                 },
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
+              flex: 2,
               child: Selector(
-                labelText: "Máximo de hóspedes",
+                labelText: "Máx. hóspedes",
                 value: maxIntercambistas,
-                items: PerfilConstantes.maxIntercambistas,
+                items: FormConstants.maxEps,
                 onChanged: (val) {
-                  setState(() => maxIntercambistas = val!);
+                  setState(() => maxIntercambistas = val);
                   _atualizar();
                 },
               ),
@@ -201,9 +191,19 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
           ],
         ),
         const SizedBox(height: 24),
-        MultiSelectChips(
+        Selector(
           labelText: "Por quanto tempo você pode hospedar?",
-          allOptions: PerfilConstantes.periodosHospedagem,
+          value: tempoHospedagem,
+          items: FormConstants.tempoHospedagem,
+          onChanged: (val) {
+            setState(() => tempoHospedagem = val);
+            _atualizar();
+          },
+        ),
+        const SizedBox(height: 24),
+        MultiSelectChips(
+          labelText: "Meses disponíveis para receber (Opcional)",
+          allOptions: FormConstants.meses,
           selectedOptions: periodos,
           onChanged: (l) {
             setState(() => periodos = l);
@@ -211,15 +211,16 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
           },
         ),
         const SizedBox(height: 32),
-        BooleanSelector(
+        Selector(
           labelText: "Você tem animais de estimação?",
           value: temAnimais,
+          items: FormConstants.simNao,
           onChanged: (val) {
             setState(() => temAnimais = val);
             _atualizar();
           },
         ),
-        if (temAnimais) ...[
+        if (temAnimais == 'Sim') ...[
           const SizedBox(height: 24),
           Editor(
             controller: detalhesAnimaisInfo,
@@ -234,7 +235,7 @@ class _FormDetalhesHospedagemState extends State<FormDetalhesHospedagem> {
         const SizedBox(height: 32),
         MultiSelectChips(
           labelText: "O que tem nas proximidades da sua casa?",
-          allOptions: PerfilConstantes.comodidades,
+          allOptions: FormConstants.comodidades,
           selectedOptions: comodidades,
           onChanged: (l) {
             setState(() => comodidades = l);

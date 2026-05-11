@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+import 'package:aiesec_lar_global/data/models/comite_local.dart';
 import 'package:aiesec_lar_global/data/models/intercambista/intercambista.dart';
 
 class DashboardKPIs extends StatelessWidget {

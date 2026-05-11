@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+import 'package:aiesec_lar_global/data/models/comite_local.dart';
 
 class DashboardStatesCards extends StatelessWidget {
   final List<ComiteLocal> comites;

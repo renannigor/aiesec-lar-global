@@ -4,7 +4,7 @@ import 'package:aiesec_lar_global/core/utils/snackbar.dart';
 import 'package:aiesec_lar_global/core/widgets/editor.dart';
 import 'package:aiesec_lar_global/core/widgets/selector.dart';
 import 'package:flutter/material.dart';
-import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+import 'package:aiesec_lar_global/data/models/comite_local.dart';
 import 'package:aiesec_lar_global/data/models/ibge_model.dart';
 import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 import 'package:aiesec_lar_global/data/services/ibge_service.dart';
@@ -125,10 +125,6 @@ class _ComiteFormSheetState extends State<ComiteFormSheet> {
         estado: _selectedEstado!.sigla,
         status: widget.comite?.status ?? 'Ativo',
         nomePodio: _nomeController.text.trim().split(' ').last.toUpperCase(),
-        testemunhas: widget.comite?.testemunhas ?? [],
-        cnpj: widget.comite?.cnpj,
-        dadosPresidente: widget.comite?.dadosPresidente,
-        endereco: widget.comite?.endereco,
       );
 
       if (widget.comite != null) {

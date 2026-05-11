@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:aiesec_lar_global/core/utils/snackbar.dart';
 import 'package:aiesec_lar_global/core/widgets/responsive.dart';
 import 'package:aiesec_lar_global/data/models/usuario/usuario.dart';
-import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+import 'package:aiesec_lar_global/data/models/comite_local.dart';
 import 'package:aiesec_lar_global/data/services/usuario_service.dart';
 import 'package:aiesec_lar_global/data/services/auth_service.dart';
 
@@ -32,6 +32,10 @@ class _UsuariosUIState extends State<UsuariosUI> {
   int _currentPage = 1;
   final int _itemsPerPage = 10;
   bool _isLoadingComites = true;
+
+  // --- Lógica de Seleção em Massa (Checkboxes) ---
+  final Set<String> _selecionados = {};
+  bool _isDeletingBulk = false;
 
   @override
   void initState() {
@@ -62,8 +66,93 @@ class _UsuariosUIState extends State<UsuariosUI> {
   void _realizarBusca() {
     setState(() {
       _searchTerm = _searchController.text.trim().toLowerCase();
-      _currentPage = 1; // Volta para a página 1 ao pesquisar
+      _currentPage = 1;
+      _selecionados.clear();
     });
+  }
+
+  void _handleSelectUser(String uid, bool? isSelected) {
+    setState(() {
+      if (isSelected == true) {
+        _selecionados.add(uid);
+      } else {
+        _selecionados.remove(uid);
+      }
+    });
+  }
+
+  void _handleSelectAll(bool? isSelected, List<Usuario> currentPageUsers) {
+    setState(() {
+      if (isSelected == true) {
+        // Seleciona apenas os que possuem Podio ID
+        final uidsAdicionais = currentPageUsers
+            .where((u) => u.podioItemId != null)
+            .map((u) => u.uid)
+            .toList();
+
+        if (uidsAdicionais.isEmpty) {
+          SnackbarUtils.showError("Nenhum usuário desta página está no CRM.");
+        } else {
+          _selecionados.addAll(uidsAdicionais);
+        }
+      } else {
+        for (var u in currentPageUsers) {
+          _selecionados.remove(u.uid);
+        }
+      }
+    });
+  }
+
+  Future<void> _removerSelecionadosEmMassa() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Remover do Podio em massa"),
+        content: Text(
+          "Tem certeza que deseja remover os ${_selecionados.length} usuários selecionados do CRM Podio?\n\nOs dados deles continuarão salvos aqui no aplicativo.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              "Sim, Remover",
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true && mounted) {
+      setState(() => _isDeletingBulk = true);
+
+      try {
+        SnackbarUtils.showInfo(
+          "Removendo ${_selecionados.length} usuários do Podio...",
+        );
+
+        for (String uid in _selecionados) {
+          await UsuarioService.instance.deletarUsuarioApenasDoPodio(uid: uid);
+        }
+
+        SnackbarUtils.showSuccess(
+          "Todos os usuários selecionados foram removidos do Podio.",
+        );
+        setState(() {
+          _selecionados.clear();
+        });
+      } catch (e) {
+        SnackbarUtils.showError("Erro em um ou mais usuários: $e");
+      } finally {
+        if (mounted) {
+          setState(() => _isDeletingBulk = false);
+        }
+      }
+    }
   }
 
   @override
@@ -154,6 +243,54 @@ class _UsuariosUIState extends State<UsuariosUI> {
 
           const SizedBox(height: 16),
 
+          // --- BARRA DE AÇÃO EM MASSA ---
+          if (_selecionados.isNotEmpty)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "${_selecionados.length} usuário(s) selecionado(s)",
+                    style: TextStyle(
+                      color: Colors.red.shade900,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  _isDeletingBulk
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.red,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : TextButton.icon(
+                          onPressed: _removerSelecionadosEmMassa,
+                          icon: const Icon(
+                            Icons.delete_sweep,
+                            color: Colors.red,
+                          ),
+                          label: const Text(
+                            "Remover do Podio",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                ],
+              ),
+            ),
+
           if (isMobile)
             UsuariosListMobile(
               usuarios: paginatedList,
@@ -165,6 +302,8 @@ class _UsuariosUIState extends State<UsuariosUI> {
               currentPage: _currentPage,
               startIndex: startIndex,
               endIndex: endIndex,
+              selecionados: _selecionados,
+              onSelectUser: _handleSelectUser,
               onPageChanged: (page) => setState(() => _currentPage = page),
             )
           else
@@ -178,6 +317,9 @@ class _UsuariosUIState extends State<UsuariosUI> {
               currentPage: _currentPage,
               startIndex: startIndex,
               endIndex: endIndex,
+              selecionados: _selecionados,
+              onSelectAll: _handleSelectAll,
+              onSelectUser: _handleSelectUser,
               onPageChanged: (page) => setState(() => _currentPage = page),
             ),
         ],

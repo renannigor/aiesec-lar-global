@@ -251,9 +251,11 @@ class DetalhesHostSheet extends StatelessWidget {
                         _buildInfoRow(
                           Icons.bed_outlined,
                           "Tipo de Quarto",
-                          host.detalhesHospedagem!.tipoQuarto,
+                          host.detalhesHospedagem!.tipoQuarto ??
+                              "Não informado",
                         ),
-                        if (host.detalhesHospedagem!.tipoQuarto.toLowerCase() ==
+                        if (host.detalhesHospedagem!.tipoQuarto
+                                    ?.toLowerCase() ==
                                 'compartilhado' &&
                             host.detalhesHospedagem!.quartoCompartilhadoCom !=
                                 null)
@@ -271,29 +273,31 @@ class DetalhesHostSheet extends StatelessWidget {
                         _buildInfoRow(
                           Icons.kitchen_outlined,
                           "Acesso às áreas comuns?",
-                          host.detalhesHospedagem!.acessoAreasComuns
-                              ? "Sim"
-                              : "Não",
+                          host.detalhesHospedagem!.acessoAreasComuns ??
+                              "Não informado",
                         ),
                         _buildInfoRow(
                           Icons.fastfood_outlined,
                           "Refeições Oferecidas",
-                          host.detalhesHospedagem!.refeicoesOferecidas,
+                          host.detalhesHospedagem!.refeicoesOferecidas ??
+                              "Não informado",
                         ),
                         _buildInfoRow(
                           Icons.group_add_outlined,
                           "Pode receber até",
-                          "${host.detalhesHospedagem!.maxIntercambistas} intercambista(s)",
+                          host.detalhesHospedagem!.maxIntercambistas != null
+                              ? "${host.detalhesHospedagem!.maxIntercambistas} intercambista(s)"
+                              : "Não informado",
                         ),
                         const Divider(height: 24),
                         _buildInfoRow(
                           Icons.pets_outlined,
                           "Animais de Estimação",
-                          host.detalhesHospedagem!.temAnimais
+                          host.detalhesHospedagem!.temAnimais == 'Sim'
                               ? "Sim, possui animais."
                               : "Não possui animais.",
                         ),
-                        if (host.detalhesHospedagem!.temAnimais &&
+                        if (host.detalhesHospedagem!.temAnimais == 'Sim' &&
                             host.detalhesHospedagem!.detalhesAnimais != null)
                           _buildInfoRow(
                             Icons.info_outline,
@@ -310,14 +314,22 @@ class DetalhesHostSheet extends StatelessWidget {
                         _buildInfoRow(
                           Icons.directions_bus_outlined,
                           "Comodidades próximas (Transporte/Mercado)",
-                          host.detalhesHospedagem!.comodidadesProximas.join(
-                            ', ',
-                          ),
+                          host
+                                  .detalhesHospedagem!
+                                  .comodidadesProximas
+                                  .isNotEmpty
+                              ? host.detalhesHospedagem!.comodidadesProximas
+                                    .join(', ')
+                              : "Não informado",
                         ),
                         _buildInfoRow(
                           Icons.calendar_month_outlined,
                           "Períodos que pode hospedar",
-                          host.detalhesHospedagem!.periodoHospedagem.join(', '),
+                          host.detalhesHospedagem!.periodoHospedagem.isNotEmpty
+                              ? host.detalhesHospedagem!.periodoHospedagem.join(
+                                  ', ',
+                                )
+                              : "Não informado",
                         ),
                       ],
                     ],
@@ -358,27 +370,38 @@ class DetalhesHostSheet extends StatelessWidget {
                         _buildInfoRow(
                           Icons.smoke_free_outlined,
                           "Aceita Fumantes?",
-                          host.preferenciasHospedagem!.restricaoFumantes
-                              ? "Não (Apenas não fumantes)"
-                              : "Sim",
+                          host.preferenciasHospedagem!.restricaoFumantes ??
+                              "Não informado",
                         ),
                         _buildInfoRow(
                           Icons.no_meals_outlined,
                           "Aceita EPs com restrição alimentar?",
-                          host.preferenciasHospedagem!.aceitaRestricaoAlimentar
-                              .join(', '),
+                          host
+                                  .preferenciasHospedagem!
+                                  .aceitaRestricaoAlimentar
+                                  .isNotEmpty
+                              ? host
+                                    .preferenciasHospedagem!
+                                    .aceitaRestricaoAlimentar
+                                    .join(', ')
+                              : "Não informado",
                         ),
                         _buildInfoRow(
                           Icons.wc_outlined,
                           "Preferência de Sexo do EP",
-                          host.preferenciasHospedagem!.preferenciaSexo,
+                          host.preferenciasHospedagem!.preferenciaSexo ??
+                              "Não informado",
                         ),
                         _buildInfoRow(
                           Icons.translate_outlined,
                           "Idiomas preferenciais",
-                          host.preferenciasHospedagem!.preferenciaIdiomas.join(
-                            ', ',
-                          ),
+                          host
+                                  .preferenciasHospedagem!
+                                  .preferenciaIdiomas
+                                  .isNotEmpty
+                              ? host.preferenciasHospedagem!.preferenciaIdiomas
+                                    .join(', ')
+                              : "Não informado",
                         ),
                         if (host.preferenciasHospedagem!.outrosIdiomas !=
                                 null &&

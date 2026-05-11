@@ -1,6 +1,8 @@
 enum PodioAppType {
   epsIcx('EPs ICX'),
-  opensIcx('Opens ICX');
+  opensIcx('Opens ICX'),
+  larGlobal('Lar Global'),
+  nps('NPS Lar Global');
 
   final String nomePodio;
   const PodioAppType(this.nomePodio);
@@ -9,6 +11,8 @@ enum PodioAppType {
   static PodioAppType? fromString(String? valor) {
     if (valor == 'EPs ICX') return PodioAppType.epsIcx;
     if (valor == 'Opens ICX') return PodioAppType.opensIcx;
+    if (valor == 'Lar Global') return PodioAppType.larGlobal;
+    if (valor == 'NPS Lar Global') return PodioAppType.nps;
     return null;
   }
 }
@@ -30,7 +34,6 @@ class PodioCredentialsModel {
 
   factory PodioCredentialsModel.fromFirestore(Map<String, dynamic> map) {
     return PodioCredentialsModel(
-      // Adicionado .toString() para evitar erro se o Firebase retornar um int
       appId: map['app_id']?.toString() ?? '',
       appToken: map['app_token']?.toString() ?? '',
       clientId: map['client_id']?.toString() ?? '',
@@ -39,7 +42,6 @@ class PodioCredentialsModel {
     );
   }
 
-  // Novo método para converter de volta para Map (exigência do withConverter)
   Map<String, dynamic> toJson() {
     return {
       'app_id': appId,

@@ -10,7 +10,7 @@ import '../../../data/services/viacep_service.dart';
 
 // --- NOVOS IMPORTS ---
 import 'package:aiesec_lar_global/core/widgets/selector.dart';
-import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+import 'package:aiesec_lar_global/data/models/comite_local.dart';
 import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 
 class SignUpForm extends StatefulWidget {

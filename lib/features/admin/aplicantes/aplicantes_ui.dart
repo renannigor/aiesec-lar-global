@@ -1,6 +1,4 @@
-import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 import 'package:aiesec_lar_global/data/services/intercambista_service.dart';
-import 'package:aiesec_lar_global/data/services/pdf_termo_service.dart';
 import 'package:aiesec_lar_global/features/admin/aplicantes/components/detalhes_host_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -49,39 +47,20 @@ class AplicantesUI extends StatelessWidget {
     }
   }
 
-  // --- LÓGICA DE GERAÇÃO DE PDF (ATUALIZADA) ---
-  Future<void> _gerarPdfTermo(BuildContext context, Aplicacao app) async {
+  // --- LÓGICA DE GERAÇÃO DE PDF (ATUALIZADA PARA REDIRECIONAMENTO) ---
+  Future<void> _abrirGeradorPdf() async {
     try {
-      // 1. Mostra carregamento
-      SnackbarUtils.showInfo("Buscando dados para gerar o PDF...");
+      final uri = Uri.parse('https://hub.aiesec.org.br/gerador-docs');
 
-      // 2. Busca o Host no Firebase
-      final host = await UsuarioService.instance.getUsuario(uid: app.hostUid);
-      if (host == null) {
-        SnackbarUtils.showError("Erro: Host não encontrado no banco de dados.");
-        return;
+      if (await canLaunchUrl(uri)) {
+        // mode: LaunchMode.externalApplication força a abrir no navegador padrão do dispositivo
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        SnackbarUtils.showError("Não foi possível abrir o site do gerador.");
       }
-
-      // 3. Busca o Comitê Local usando o nome do comitê que está na Aplicação
-      final comite = await ComiteLocalService.instance.getComitePorNomePodio(
-        app.comiteLocal,
-      );
-      if (comite == null) {
-        SnackbarUtils.showError(
-          "Erro: Dados do Comitê (${app.comiteLocal}) não encontrados.",
-        );
-        return;
-      }
-
-      // 4. Chama o Service do PDF
-      await PdfTermoService.gerarEImprimirTermo(
-        host: host,
-        ep: intercambista,
-        comite: comite,
-      );
     } catch (e) {
-      debugPrint("Erro ao gerar PDF: $e");
-      SnackbarUtils.showError("Erro ao gerar o termo: $e");
+      debugPrint("Erro ao abrir link: $e");
+      SnackbarUtils.showError("Erro ao redirecionar: $e");
     }
   }
 
@@ -449,9 +428,9 @@ class AplicantesUI extends StatelessWidget {
                                           Icons.picture_as_pdf_outlined,
                                           color: Colors.redAccent,
                                         ),
-                                        tooltip: 'Gerar Termo de Hospedagem',
-                                        onPressed: () =>
-                                            _gerarPdfTermo(context, app),
+                                        tooltip:
+                                            'Acessar Gerador de Documentos',
+                                        onPressed: () => _abrirGeradorPdf(),
                                         splashRadius: 20,
                                       )
                                     : const Center(

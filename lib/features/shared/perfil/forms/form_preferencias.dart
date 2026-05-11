@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:aiesec_lar_global/data/models/usuario/preferencias_hospedagem.dart';
-import 'package:aiesec_lar_global/core/widgets/boolean_selector.dart';
 import 'package:aiesec_lar_global/core/widgets/multi_select_chips.dart';
 import 'package:aiesec_lar_global/core/widgets/selector.dart';
 import 'package:aiesec_lar_global/core/widgets/editor.dart';
-import '../perfil_constantes.dart';
+import 'package:aiesec_lar_global/core/constants/form_constants.dart';
 
 class FormPreferencias extends StatefulWidget {
   final PreferenciasHospedagem? prefsAtual;
@@ -25,31 +24,22 @@ class FormPreferencias extends StatefulWidget {
 }
 
 class _FormPreferenciasState extends State<FormPreferencias> {
-  late bool fumantes;
-  late String prefSexo;
+  String? fumantes;
+  String? prefSexo;
   late List<String> idiomas;
   late List<String> aceitaRestricoes;
-  late List<String> meses;
   late TextEditingController expectativasController;
   late TextEditingController outrosIdiomasController;
 
   @override
   void initState() {
     super.initState();
-    final p =
-        widget.prefsAtual ??
-        PreferenciasHospedagem(
-          restricaoFumantes: false,
-          aceitaRestricaoAlimentar: [],
-          preferenciaSexo: 'Indiferente',
-          preferenciaMeses: [],
-          preferenciaIdiomas: [],
-        );
+    final p = widget.prefsAtual ?? PreferenciasHospedagem();
+
     fumantes = p.restricaoFumantes;
     prefSexo = p.preferenciaSexo;
     idiomas = List.from(p.preferenciaIdiomas);
     aceitaRestricoes = List.from(p.aceitaRestricaoAlimentar);
-    meses = List.from(p.preferenciaMeses);
 
     expectativasController = TextEditingController(
       text: widget.expectativasAtual ?? "",
@@ -64,7 +54,6 @@ class _FormPreferenciasState extends State<FormPreferencias> {
       restricaoFumantes: fumantes,
       aceitaRestricaoAlimentar: aceitaRestricoes,
       preferenciaSexo: prefSexo,
-      preferenciaMeses: meses,
       preferenciaIdiomas: idiomas,
       outrosIdiomas: idiomas.contains('Outros')
           ? outrosIdiomasController.text
@@ -90,11 +79,12 @@ class _FormPreferenciasState extends State<FormPreferencias> {
           enabled: true,
         ),
         const SizedBox(height: 32),
-        BooleanSelector(
+        Selector(
           labelText: "Você possui restrição com fumantes?",
           value: fumantes,
-          onChanged: (temRestricao) {
-            setState(() => fumantes = temRestricao);
+          items: FormConstants.aceitaFumantes,
+          onChanged: (val) {
+            setState(() => fumantes = val);
             _atualizar();
           },
         ),
@@ -102,24 +92,22 @@ class _FormPreferenciasState extends State<FormPreferencias> {
         Selector(
           labelText: "Preferência em hospedar intercambista do sexo",
           value: prefSexo,
-          items: const ['Indiferente', 'Masculino', 'Feminino'],
+          items: FormConstants.prefSexo,
           onChanged: (val) {
-            setState(() => prefSexo = val!);
+            setState(() => prefSexo = val);
             _atualizar();
           },
         ),
         const SizedBox(height: 24),
         MultiSelectChips(
           labelText: "Preferência por algum idioma?",
-          allOptions: PerfilConstantes.idiomas,
+          allOptions: FormConstants.idiomas,
           selectedOptions: idiomas,
           onChanged: (l) {
             setState(() => idiomas = l);
             _atualizar();
           },
         ),
-
-        // NOVO: Condicional se marcar "Outros" nos idiomas
         if (idiomas.contains('Outros')) ...[
           const SizedBox(height: 24),
           Editor(
@@ -132,25 +120,14 @@ class _FormPreferenciasState extends State<FormPreferencias> {
             keyboardType: TextInputType.text,
           ),
         ],
-
         const SizedBox(height: 24),
         MultiSelectChips(
           labelText:
               "Tem problema em hospedar pessoas com alguma restrição alimentar?",
-          allOptions: PerfilConstantes.restricaoAlimentar,
+          allOptions: FormConstants.aceitaRestricaoAlimentar,
           selectedOptions: aceitaRestricoes,
           onChanged: (l) {
             setState(() => aceitaRestricoes = l);
-            _atualizar();
-          },
-        ),
-        const SizedBox(height: 24),
-        MultiSelectChips(
-          labelText: "Preferência em receber intercambistas nos meses",
-          allOptions: PerfilConstantes.meses,
-          selectedOptions: meses,
-          onChanged: (l) {
-            setState(() => meses = l);
             _atualizar();
           },
         ),

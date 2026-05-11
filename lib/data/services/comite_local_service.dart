@@ -1,7 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import '../models/comite_local/comite_local.dart';
-import '../models/comite_local/testemunha.dart';
+import '../models/comite_local.dart';
 import 'collection_references.dart';
 
 class ComiteLocalService {
@@ -38,24 +35,6 @@ class ComiteLocalService {
 
   Future<void> atualizarComiteLocal({required ComiteLocal comite}) async {
     await _comitesRef.doc(comite.comiteId).update(comite.toJson());
-  }
-
-  Future<void> adicionarTestemunha({
-    required String comiteId,
-    required Testemunha novaTestemunha,
-  }) async {
-    await _comitesRef.doc(comiteId).update({
-      'testemunhas': FieldValue.arrayUnion([novaTestemunha.toJson()]),
-    });
-  }
-
-  Future<void> removerTestemunha({
-    required String comiteId,
-    required Testemunha testemunhaParaRemover,
-  }) async {
-    await _comitesRef.doc(comiteId).update({
-      'testemunhas': FieldValue.arrayRemove([testemunhaParaRemover.toJson()]),
-    });
   }
 
   /// DELETAR: Remove o documento do comitê local.

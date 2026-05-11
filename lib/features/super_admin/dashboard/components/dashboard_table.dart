@@ -2,7 +2,7 @@ import 'package:aiesec_lar_global/data/models/area_filtro.dart';
 import 'package:flutter/material.dart';
 import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/core/widgets/selector.dart';
-import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+import 'package:aiesec_lar_global/data/models/comite_local.dart';
 import 'package:aiesec_lar_global/data/models/intercambista/intercambista.dart';
 import 'package:aiesec_lar_global/data/services/aplicacao_service.dart';
 

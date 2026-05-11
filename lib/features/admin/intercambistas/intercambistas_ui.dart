@@ -7,7 +7,7 @@ import 'package:aiesec_lar_global/core/widgets/responsive.dart';
 // Imports Data
 import 'package:aiesec_lar_global/data/models/acesso_usuario.dart';
 import 'package:aiesec_lar_global/data/models/intercambista/intercambista.dart';
-import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+import 'package:aiesec_lar_global/data/models/comite_local.dart';
 import 'package:aiesec_lar_global/data/services/intercambista_service.dart';
 import 'package:aiesec_lar_global/data/services/auth_service.dart';
 import 'package:aiesec_lar_global/data/services/acesso_service.dart';
@@ -149,7 +149,7 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildTitle(comiteNomeLogado, totalItems),
+                    _buildTitle(totalItems),
                     const SizedBox(height: 24),
                     _buildFilters(isMobile),
                   ],
@@ -159,16 +159,11 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildTitle(comiteNomeLogado, totalItems),
+                    _buildTitle(totalItems),
                     const SizedBox(width: 24),
                     _buildFilters(isMobile),
                   ],
                 ),
-
-              const SizedBox(height: 32),
-
-              // --- MINI DASHBOARD LOCAL ---
-              _buildMiniDash(listaExibida, isMobile),
 
               const SizedBox(height: 32),
 
@@ -216,13 +211,13 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
     );
   }
 
-  Widget _buildTitle(String? comiteNomeLogado, int totalItems) {
+  Widget _buildTitle(int totalItems) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Intercambistas ${comiteNomeLogado != null ? '- $comiteNomeLogado' : ''}",
-          style: const TextStyle(
+        const Text(
+          "Intercambistas",
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: Color(0xFF111827),
@@ -234,125 +229,6 @@ class _IntercambistasUIState extends State<IntercambistasUI> {
           style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
         ),
       ],
-    );
-  }
-
-  // --- MÉTODO DO DASHBOARD ---
-  Widget _buildMiniDash(List<Intercambista> lista, bool isMobile) {
-    if (lista.isEmpty) return const SizedBox.shrink();
-
-    final total = lista.length;
-    final precisamHost = lista.where((ep) => ep.precisaHospedagem).length;
-    final garantidos = total - precisamHost;
-
-    // EPs chegando nos próximos 30 dias que ainda precisam de Host
-    final hoje = DateTime.now();
-    final limite30Dias = hoje.add(const Duration(days: 30));
-    final chegandoEmBreve = lista.where((ep) {
-      if (!ep.precisaHospedagem) return false;
-      DateTime? dtChegada = DateTime.tryParse(
-        ep.dataChegada ?? ep.dataRePresencial,
-      );
-      if (dtChegada == null) return false;
-      return dtChegada.isAfter(hoje) && dtChegada.isBefore(limite30Dias);
-    }).length;
-
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: [
-        _buildDashCard(
-          isMobile,
-          titulo: "Total de EPs",
-          valor: total.toString(),
-          icone: Icons.people_outline,
-          cor: Colors.blue,
-        ),
-        _buildDashCard(
-          isMobile,
-          titulo: "Precisam de Host",
-          valor: precisamHost.toString(),
-          icone: Icons.home_work_outlined,
-          cor: Colors.orange,
-        ),
-        _buildDashCard(
-          isMobile,
-          titulo: "Acomodação OK",
-          valor: garantidos.toString(),
-          icone: Icons.check_circle_outline,
-          cor: Colors.green,
-        ),
-        _buildDashCard(
-          isMobile,
-          titulo: "Chegando (< 30 dias)",
-          valor: chegandoEmBreve.toString(),
-          icone: Icons.warning_amber_rounded,
-          cor: chegandoEmBreve > 0 ? Colors.red : Colors.grey,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDashCard(
-    bool isMobile, {
-    required String titulo,
-    required String valor,
-    required IconData icone,
-    required Color cor,
-  }) {
-    return Container(
-      width: isMobile ? double.infinity : 220,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: cor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icone, color: cor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titulo,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  valor,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 

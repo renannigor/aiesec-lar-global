@@ -1,6 +1,6 @@
 import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/core/utils/snackbar.dart';
-import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+import 'package:aiesec_lar_global/data/models/comite_local.dart';
 import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 import 'package:flutter/material.dart';
 
@@ -211,10 +211,6 @@ class ComitesTable extends StatelessWidget {
         estado: comite.estado,
         status: novoStatus,
         nomePodio: comite.nomePodio,
-        cnpj: comite.cnpj,
-        dadosPresidente: comite.dadosPresidente,
-        endereco: comite.endereco,
-        testemunhas: comite.testemunhas,
       );
 
       await ComiteLocalService.instance.atualizarComiteLocal(

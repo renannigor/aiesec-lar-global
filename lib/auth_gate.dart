@@ -22,12 +22,11 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<AcessoUsuario?>(
       stream: AcessoService.instance.getAcessoStream(uid: firebaseUser.uid),
       builder: (context, acessoSnapshot) {
-        Widget
-        screenToDisplay; // Variável para segurar a tela que será mostrada
+        Widget screenToDisplay = const Scaffold(body: SizedBox.shrink());
 
         if (acessoSnapshot.connectionState == ConnectionState.waiting) {
           screenToDisplay = const Scaffold(
-            key: ValueKey('loading'), // Chave de identificação
+            key: ValueKey('loading'),
             body: Center(child: CircularProgressIndicator()),
           );
         } else if (acessoSnapshot.hasError) {
@@ -36,26 +35,26 @@ class AuthGate extends StatelessWidget {
             key: const ValueKey('error'),
             body: Center(child: Text("Erro: ${acessoSnapshot.error}")),
           );
-        }
-        // Se NÃO existir um documento na coleção 'acessos', ele é obrigatoriamente um HOST
-        else if (!acessoSnapshot.hasData || acessoSnapshot.data == null) {
+        } else if (!acessoSnapshot.hasData || acessoSnapshot.data == null) {
           screenToDisplay = const HostUI(key: ValueKey('host'));
-        }
-        // Se existir, verificamos o papel real definido pelo Superadmin
-        else {
+        } else {
           final acesso = acessoSnapshot.data!;
+          // Geramos chaves com os IDs reais do usuário para torná-las absolutas e únicas,
+          // evitando assim o erro de DuplicateKeys.
           switch (acesso.papel) {
             case PapelAcesso.admin:
-              screenToDisplay = const AdminUI(key: ValueKey('admin'));
+              screenToDisplay = AdminUI(
+                key: ValueKey('admin_${firebaseUser.uid}'),
+              );
               break;
             case PapelAcesso.superadmin:
-              screenToDisplay = const SuperAdminUI(key: ValueKey('superadmin'));
+              screenToDisplay = SuperAdminUI(
+                key: ValueKey('superadmin_${firebaseUser.uid}'),
+              );
               break;
           }
         }
 
-        // O AnimatedSwitcher resolve o bug "!isDisposed" da web
-        // Ele força a árvore de widgets a ser desmontada com cuidado.
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: screenToDisplay,

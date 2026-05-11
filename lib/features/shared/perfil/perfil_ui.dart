@@ -299,6 +299,8 @@ class _PerfilUIState extends State<PerfilUI> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+          print("[DEBUG UI] StreamBuilder reconstruiu. Snapshot data: ${snapshot.data}");
+          print("[DEBUG UI] Snapshot error: ${snapshot.error}");
           if (!snapshot.hasData || snapshot.data == null) {
             return const Center(child: Text("Erro ao carregar perfil"));
           }

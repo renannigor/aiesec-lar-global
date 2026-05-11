@@ -1,42 +1,34 @@
 class PreferenciasHospedagem {
   PreferenciasHospedagem({
-    required this.restricaoFumantes,
-    required this.aceitaRestricaoAlimentar, // "Sim, vegetarianos", "Não", etc.
-    required this.preferenciaSexo,
-    required this.preferenciaMeses,
-    required this.preferenciaIdiomas,
+    this.restricaoFumantes,
+    this.aceitaRestricaoAlimentar = const [],
+    this.preferenciaSexo,
+    this.preferenciaIdiomas = const [],
     this.outrosIdiomas,
   });
 
-  PreferenciasHospedagem.fromJson(Map<String, dynamic> json)
-    : this(
-        restricaoFumantes: json['restricaoFumantes']! as bool,
-        aceitaRestricaoAlimentar: List<String>.from(
-          json['aceitaRestricaoAlimentar']! as List,
-        ),
-        preferenciaSexo: json['preferenciaSexo']! as String,
-        preferenciaMeses: List<String>.from(json['preferenciaMeses']! as List),
-        preferenciaIdiomas: List<String>.from(
-          json['preferenciaIdiomas']! as List,
-        ),
-        outrosIdiomas: json['outrosIdiomas'] as String?,
-      );
-
-  final bool restricaoFumantes;
+  final String? restricaoFumantes;
   final List<String> aceitaRestricaoAlimentar;
-  final String preferenciaSexo;
-  final List<String> preferenciaMeses;
+  final String? preferenciaSexo;
   final List<String> preferenciaIdiomas;
   final String? outrosIdiomas;
 
-  Map<String, dynamic> toJson() {
-    return {
-      'restricaoFumantes': restricaoFumantes,
-      'aceitaRestricaoAlimentar': aceitaRestricaoAlimentar,
-      'preferenciaSexo': preferenciaSexo,
-      'preferenciaMeses': preferenciaMeses,
-      'preferenciaIdiomas': preferenciaIdiomas,
-      if (outrosIdiomas != null) 'outrosIdiomas': outrosIdiomas,
-    };
-  }
+  PreferenciasHospedagem.fromJson(Map<String, dynamic> json)
+    : this(
+        restricaoFumantes: json['restricaoFumantes'] as String?,
+        aceitaRestricaoAlimentar: List<String>.from(
+          json['aceitaRestricaoAlimentar'] ?? [],
+        ),
+        preferenciaSexo: json['preferenciaSexo'] as String?,
+        preferenciaIdiomas: List<String>.from(json['preferenciaIdiomas'] ?? []),
+        outrosIdiomas: json['outrosIdiomas'] as String?,
+      );
+
+  Map<String, dynamic> toJson() => {
+    'restricaoFumantes': restricaoFumantes,
+    'aceitaRestricaoAlimentar': aceitaRestricaoAlimentar,
+    'preferenciaSexo': preferenciaSexo,
+    'preferenciaIdiomas': preferenciaIdiomas,
+    'outrosIdiomas': outrosIdiomas,
+  };
 }

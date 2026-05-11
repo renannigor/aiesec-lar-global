@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // NOVO IMPORT PARA LER O AUTH
+
 import '../models/aplicacao.dart';
 import 'collection_references.dart';
 
@@ -14,7 +16,7 @@ class AplicacaoService {
     await _aplicacoesRef.add(aplicacao);
   }
 
-  /// NOVO: Verifica se o Host já se aplicou para esse EP (Evita duplicidade)
+  /// Verifica se o Host já se aplicou para esse EP (Evita duplicidade)
   Future<bool> jaDemonstrouInteresse({
     required String hostUid,
     required String intercambistaId,
@@ -22,21 +24,17 @@ class AplicacaoService {
     final snapshot = await _aplicacoesRef
         .where('hostUid', isEqualTo: hostUid)
         .where('intercambistaId', isEqualTo: intercambistaId)
-        // Ignora aplicações canceladas (ele pode tentar de novo se quiser)
         .where('status', isNotEqualTo: StatusAplicacao.cancelada.name)
         .get();
 
     return snapshot.docs.isNotEmpty;
   }
 
-  /// NOVO: Stream para atualizar a tela do Host em tempo real!
+  /// Stream para atualizar a tela do Host em tempo real!
   Stream<List<Aplicacao>> getAplicacoesDoHostStream({required String hostUid}) {
     return _aplicacoesRef
         .where('hostUid', isEqualTo: hostUid)
-        .orderBy(
-          'dataUltimaAtualizacao',
-          descending: true,
-        ) // Os mais recentes primeiro
+        .orderBy('dataUltimaAtualizacao', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
@@ -64,13 +62,13 @@ class AplicacaoService {
   /// Retorna a quantidade de aplicações ativas para um intercambista específico
   Future<int> getQuantidadeAplicacoesAtivas(String intercambistaId) async {
     try {
-      // Faz a busca apenas pelo ID
+      // PROTEÇÃO DE LOGOUT: Se não há usuário, não acessamos o Firestore!
+      if (FirebaseAuth.instance.currentUser == null) return 0;
+
       final snapshot = await _aplicacoesRef
           .where('intercambistaId', isEqualTo: intercambistaId)
           .get();
 
-      // Filtra os cancelados no lado do cliente
-      // Como usamos withConverter, doc.data() já é um objeto Aplicacao!
       final ativas = snapshot.docs.where((doc) {
         final aplicacao = doc.data();
         return aplicacao.status != StatusAplicacao.cancelada;
@@ -98,13 +96,12 @@ class AplicacaoService {
   Future<void> atualizarRetornoAplicacao({
     required String aplicacaoId,
     required StatusAplicacao novoStatus,
-    String? motivo, // <-- Novo parâmetro opcional
+    String? motivo,
   }) async {
     await _aplicacoesRef.doc(aplicacaoId).update({
       'status': novoStatus.name,
       'dataUltimaAtualizacao': Timestamp.now(),
-      if (motivo != null)
-        'mensagemHost': motivo, // Atualiza o motivo da rejeição
+      if (motivo != null) 'mensagemHost': motivo,
     });
   }
 

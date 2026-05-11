@@ -1,7 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dados_presidente.dart';
-import '../endereco.dart';
-import 'testemunha.dart';
 
 class ComiteLocal {
   ComiteLocal({
@@ -11,12 +8,8 @@ class ComiteLocal {
     required this.estado,
     this.status = 'Ativo',
     required this.nomePodio,
-    this.cnpj,
     this.telefone,
     this.email,
-    this.dadosPresidente,
-    this.endereco,
-    this.testemunhas = const [],
   });
 
   ComiteLocal.fromSnapshot(DocumentSnapshot doc)
@@ -30,24 +23,8 @@ class ComiteLocal {
         estado: json['estado'] as String,
         status: json['status'] as String? ?? 'Ativo',
         nomePodio: json['nome_podio'] as String,
-        cnpj: json['cnpj'] as String?,
         telefone: json['telefone'] as String?,
         email: json['email'] as String?,
-        dadosPresidente: json['dadosPresidente'] != null
-            ? DadosPresidente.fromJson(
-                json['dadosPresidente'] as Map<String, dynamic>,
-              )
-            : null,
-
-        endereco: json['endereco'] != null
-            ? Endereco.fromJson(json['endereco'] as Map<String, dynamic>)
-            : null,
-
-        testemunhas:
-            (json['testemunhas'] as List?)
-                ?.map((t) => Testemunha.fromJson(t as Map<String, dynamic>))
-                .toList() ??
-            [],
       );
 
   final String? comiteId;
@@ -58,12 +35,8 @@ class ComiteLocal {
   final String nomePodio;
 
   // Campos Opcionais
-  final String? cnpj;
   final String? telefone;
   final String? email;
-  final DadosPresidente? dadosPresidente;
-  final Endereco? endereco;
-  final List<Testemunha> testemunhas;
 
   Map<String, dynamic> toJson() {
     // Cria o mapa base com os obrigatórios
@@ -73,17 +46,11 @@ class ComiteLocal {
       'estado': estado,
       'status': status,
       'nome_podio': nomePodio,
-      'testemunhas': testemunhas.map((t) => t.toJson()).toList(),
     };
 
     // Só adiciona os opcionais se eles existirem
-    if (cnpj != null) data['cnpj'] = cnpj;
     if (telefone != null) data['telefone'] = telefone;
     if (email != null) data['email'] = email;
-    if (dadosPresidente != null) {
-      data['dadosPresidente'] = dadosPresidente!.toJson();
-    }
-    if (endereco != null) data['endereco'] = endereco!.toJson();
 
     return data;
   }

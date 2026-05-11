@@ -1,7 +1,10 @@
+import 'package:aiesec_lar_global/data/models/nps_host.dart';
+import 'package:aiesec_lar_global/data/services/collection_references.dart';
 import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 import 'package:aiesec_lar_global/features/host/interesses/components/status_aplicacao_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:aiesec_lar_global/core/theme/app_colors.dart';
 import 'package:aiesec_lar_global/data/models/aplicacao.dart';
@@ -11,16 +14,22 @@ import 'package:aiesec_lar_global/core/utils/snackbar.dart';
 
 // --- IMPORTS DOS BOTTOM SHEETS ---
 import 'package:aiesec_lar_global/features/host/components/detalhes_intercambista_sheet.dart';
+import 'package:aiesec_lar_global/features/host/interesses/components/nps_form_sheet.dart';
 
 // IMPORTAR A SUA CLASSE RESPONSIVE
 import 'package:aiesec_lar_global/core/widgets/responsive.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class AplicacaoCard extends StatelessWidget {
+class AplicacaoCard extends StatefulWidget {
   final Aplicacao aplicacao;
 
   const AplicacaoCard({super.key, required this.aplicacao});
 
+  @override
+  State<AplicacaoCard> createState() => _AplicacaoCardState();
+}
+
+class _AplicacaoCardState extends State<AplicacaoCard> {
   String _formatarData(String? dataIso) {
     if (dataIso == null || dataIso.isEmpty || dataIso == 'Não informado') {
       return 'A definir';
@@ -39,7 +48,7 @@ class AplicacaoCard extends StatelessWidget {
       SnackbarUtils.showInfo("Buscando contato do comitê...");
 
       final comite = await ComiteLocalService.instance.getComitePorNomePodio(
-        aplicacao.comiteLocal,
+        widget.aplicacao.comiteLocal,
       );
 
       if (comite == null ||
@@ -51,10 +60,8 @@ class AplicacaoCard extends StatelessWidget {
         return;
       }
 
-      // Remove tudo que não for número do telefone (ex: parênteses, espaços, traços)
       final numeroLimpo = comite.telefone!.replaceAll(RegExp(r'[^0-9]'), '');
 
-      // Adiciona o código do Brasil (55) caso não tenha. Ajuste se houver comitês internacionais.
       final numeroComCodigo = numeroLimpo.startsWith('55')
           ? numeroLimpo
           : '55$numeroLimpo';
@@ -71,10 +78,31 @@ class AplicacaoCard extends StatelessWidget {
     }
   }
 
+  // --- FUNÇÃO PARA ABRIR O NPS ---
+  Future<void> _abrirFormularioNps(BuildContext context) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + 40,
+          ),
+          child: NpsFormSheet(aplicacao: widget.aplicacao),
+        );
+      },
+    );
+    // Ao fechar o bottom sheet, recarrega o estado para travar o botão se ele enviou
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final chegada = _formatarData(aplicacao.dataChegada);
-    final partida = _formatarData(aplicacao.dataPartida);
+    final chegada = _formatarData(widget.aplicacao.dataChegada);
+    final partida = _formatarData(widget.aplicacao.dataPartida);
     final isMobile = Responsive.isMobile(context);
 
     return Column(
@@ -89,8 +117,8 @@ class AplicacaoCard extends StatelessWidget {
               radius: 20,
               backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               child: Text(
-                aplicacao.epNome.isNotEmpty
-                    ? aplicacao.epNome[0].toUpperCase()
+                widget.aplicacao.epNome.isNotEmpty
+                    ? widget.aplicacao.epNome[0].toUpperCase()
                     : '?',
                 style: const TextStyle(
                   fontSize: 18,
@@ -104,7 +132,7 @@ class AplicacaoCard extends StatelessWidget {
             // Nome
             Expanded(
               child: Text(
-                aplicacao.epNome,
+                widget.aplicacao.epNome,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -117,7 +145,7 @@ class AplicacaoCard extends StatelessWidget {
             // Contagem de Interessados
             FutureBuilder<int>(
               future: AplicacaoService.instance.getQuantidadeAplicacoesAtivas(
-                aplicacao.intercambistaId,
+                widget.aplicacao.intercambistaId,
               ),
               builder: (context, snapshot) {
                 final int qtd = snapshot.data ?? 0;
@@ -148,7 +176,7 @@ class AplicacaoCard extends StatelessWidget {
                 const Icon(Icons.flag_outlined, size: 16, color: Colors.grey),
                 const SizedBox(width: 6),
                 Text(
-                  aplicacao.epPais,
+                  widget.aplicacao.epPais,
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.black87,
@@ -217,7 +245,7 @@ class AplicacaoCard extends StatelessWidget {
         );
 
         final ep = await IntercambistaService.instance.getIntercambistaPorId(
-          aplicacao.intercambistaId,
+          widget.aplicacao.intercambistaId,
         );
 
         if (context.mounted) Navigator.pop(context);
@@ -267,7 +295,7 @@ class AplicacaoCard extends StatelessWidget {
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 40,
               ),
-              child: StatusAplicacaoSheet(aplicacao: aplicacao),
+              child: StatusAplicacaoSheet(aplicacao: widget.aplicacao),
             );
           },
         );
@@ -295,7 +323,7 @@ class AplicacaoCard extends StatelessWidget {
     );
 
     // --- DISTRIBUIÇÃO DOS BOTÕES CONFORME O STATUS ---
-    if (aplicacao.status == StatusAplicacao.cancelada) {
+    if (widget.aplicacao.status == StatusAplicacao.cancelada) {
       botoes.addAll([
         OutlinedButton.icon(
           onPressed: () => _retomarInteresse(context),
@@ -312,10 +340,47 @@ class AplicacaoCard extends StatelessWidget {
         ),
         btnDetalhes,
       ]);
-    } else if (aplicacao.status == StatusAplicacao.rejeitada) {
+    } else if (widget.aplicacao.status == StatusAplicacao.rejeitada) {
       botoes.addAll([btnVerStatus, btnDetalhes]);
-    } else if (aplicacao.status == StatusAplicacao.concluida) {
+    } else if (widget.aplicacao.status == StatusAplicacao.concluida) {
       botoes.addAll([
+        // NOVO: BOTÃO DE AVALIAÇÃO NPS COM BLOQUEIO DE DUPLICIDADE
+        // NOVO: BOTÃO DE AVALIAÇÃO NPS COM BLOQUEIO DE DUPLICIDADE (Usando Collection Reference)
+        FutureBuilder<QuerySnapshot<NpsHost>>(
+          // <-- Adicionado o tipo <NpsHost>
+          future: FirebaseCollections
+              .avaliacoesNps // <-- Usando sua classe centralizada
+              .where('hostUid', isEqualTo: widget.aplicacao.hostUid)
+              .where('nomeIntercambista', isEqualTo: widget.aplicacao.epNome)
+              .limit(1)
+              .get(),
+          builder: (context, snapshot) {
+            final jaAvaliou =
+                snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+
+            return ElevatedButton.icon(
+              onPressed: jaAvaliou ? null : () => _abrirFormularioNps(context),
+              icon: Icon(
+                jaAvaliou ? Icons.check_circle : Icons.star_rate_rounded,
+                size: 18,
+              ),
+              label: Text(
+                jaAvaliou ? "Avaliação Enviada" : "Avaliar Experiência",
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple.shade600,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade200,
+                disabledForegroundColor: Colors.grey.shade500,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+              ),
+            );
+          },
+        ),
         OutlinedButton.icon(
           onPressed: () {
             SnackbarUtils.showInfo("Gerando certificado... aguarde.");
@@ -358,7 +423,7 @@ class AplicacaoCard extends StatelessWidget {
 
   void _retomarInteresse(BuildContext context) async {
     await AplicacaoService.instance.atualizarStatusAplicacao(
-      aplicacaoId: aplicacao.aplicacaoId,
+      aplicacaoId: widget.aplicacao.aplicacaoId,
       novoStatus: StatusAplicacao.pendente,
     );
     if (context.mounted) {
@@ -374,7 +439,7 @@ class AplicacaoCard extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text("Remover interesse?"),
         content: Text(
-          "Tem certeza que deseja desistir de hospedar ${aplicacao.epNome}?",
+          "Tem certeza que deseja desistir de hospedar ${widget.aplicacao.epNome}?",
         ),
         actions: [
           TextButton(
@@ -385,7 +450,7 @@ class AplicacaoCard extends StatelessWidget {
             onPressed: () async {
               Navigator.pop(ctx);
               await AplicacaoService.instance.atualizarStatusAplicacao(
-                aplicacaoId: aplicacao.aplicacaoId,
+                aplicacaoId: widget.aplicacao.aplicacaoId,
                 novoStatus: StatusAplicacao.cancelada,
               );
               if (context.mounted) {

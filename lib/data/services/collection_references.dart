@@ -1,12 +1,13 @@
 import 'package:aiesec_lar_global/data/models/acesso_usuario.dart';
 import 'package:aiesec_lar_global/data/models/mensagem_rejeicao.dart';
+import 'package:aiesec_lar_global/data/models/nps_host.dart';
 import 'package:aiesec_lar_global/data/models/oportunidade.dart';
 import 'package:aiesec_lar_global/data/models/podio_credentials_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/usuario/usuario.dart';
 import '../models/intercambista/intercambista.dart';
-import '../models/comite_local/comite_local.dart';
+import '../models/comite_local.dart';
 import '../models/aplicacao.dart';
 
 /// Uma classe central para armazenar todas as referências de coleções do Firestore.
@@ -84,5 +85,13 @@ class FirebaseCollections {
       .withConverter<MensagemRejeicao>(
         fromFirestore: (snapshot, _) => MensagemRejeicao.fromSnapshot(snapshot),
         toFirestore: (mensagem, _) => mensagem.toJson(),
+      );
+
+  /// Referência para a coleção 'avaliacoesNps', convertida para o model [NpsHost].
+  static final CollectionReference<NpsHost> avaliacoesNps = _db
+      .collection('avaliacoesNps')
+      .withConverter<NpsHost>(
+        fromFirestore: (snapshot, _) => NpsHost.fromSnapshot(snapshot),
+        toFirestore: (nps, _) => nps.toJson(),
       );
 }

@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:aiesec_lar_global/data/models/nps_host.dart';
+import 'package:aiesec_lar_global/data/models/oportunidade.dart';
 import 'package:aiesec_lar_global/data/services/collection_references.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -6,7 +8,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/podio_credentials_model.dart';
 import '../models/intercambista/intercambista.dart';
-import '../models/oportunidade.dart';
+import '../models/usuario/usuario.dart';
 import 'intercambista_service.dart';
 import 'oportunidade_service.dart';
 
@@ -20,7 +22,7 @@ class PodioService {
 
     try {
       final snapshot = await docRef.get();
-      const tempoDeEspera = Duration(hours: 2); // Pode ajustar o tempo aqui
+      const tempoDeEspera = Duration(hours: 2);
 
       if (snapshot.exists) {
         final dataUltimaSync =
@@ -31,7 +33,7 @@ class PodioService {
 
           if (diferenca < tempoDeEspera) {
             debugPrint(
-              "Sincronização ignorada. Última sync foi há ${diferenca.inMinutes} minutos. Lendo do cache do Firebase.",
+              "Sincronização ignorada. Última sync foi há ${diferenca.inMinutes} minutos. Lendo do cache.",
             );
             return;
           }
@@ -50,12 +52,11 @@ class PodioService {
     }
   }
 
-  /// Função principal que orquestra toda a sincronização entre Podio e Firebase
+  /// Função principal que orquestra toda a sincronização em lote (EPs e OPs)
   Future<void> sincronizarTudo() async {
     try {
       debugPrint("1. Buscando credenciais no banco de dados...");
 
-      // 1. Puxa TODOS os documentos usando a nova referência tipada
       final snapshot = await _credenciaisRef.get();
 
       if (snapshot.docs.isEmpty) {
@@ -65,7 +66,6 @@ class PodioService {
       PodioCredentialsModel? credenciaisEps;
       PodioCredentialsModel? credenciaisOps;
 
-      // 2. Separa as credenciais
       for (var doc in snapshot.docs) {
         final cred = doc.data();
 
@@ -96,15 +96,104 @@ class PodioService {
   }
 
   // ==========================================================
-  // LÓGICA DAS OPORTUNIDADES (OPs)
+  // INTEGRAÇÃO DE HOSTS (CONTACTS) - CADASTRAR/ATUALIZAR/DELETAR
   // ==========================================================
-  Future<List<Oportunidade>> _buscarESalvarOportunidades(
-    PodioCredentialsModel credenciais,
-  ) async {
+
+  /// Envia ou atualiza os dados do Host no Podio e retorna o novo item_id (se criado)
+  Future<String?> syncHostNoPodio(Usuario usuario) async {
+    try {
+      // 1. Puxa as credenciais específicas do App Contacts
+      final snapshot = await _credenciaisRef.get();
+      final credDoc = snapshot.docs.firstWhere(
+        (doc) => doc.data().appType == PodioAppType.larGlobal,
+        orElse: () =>
+            throw Exception("Credencial do App Lar Global não encontrada."),
+      );
+      final credenciais = credDoc.data();
+
+      // 2. Autentica e gera o Token
+      final accessToken = await _autenticarApp(credenciais);
+
+      final headers = {
+        "Authorization": "OAuth2 $accessToken",
+        "Content-Type": "application/json",
+      };
+
+      final payloadStr = jsonEncode(usuario.toPodioPayload());
+
+      // 3. Decide se é Criação (POST) ou Atualização (PUT)
+      if (usuario.podioItemId != null && usuario.podioItemId!.isNotEmpty) {
+        // ATUALIZAÇÃO
+        debugPrint("Atualizando Host ${usuario.podioItemId} no Podio...");
+        final putUrl = Uri.parse(
+          "https://api.podio.com/item/${usuario.podioItemId}",
+        );
+
+        final response = await http.put(
+          putUrl,
+          headers: headers,
+          body: payloadStr,
+        );
+        if (response.statusCode != 200 && response.statusCode != 204) {
+          throw Exception("Erro ao atualizar Host: ${response.body}");
+        }
+        return usuario.podioItemId;
+      } else {
+        // CRIAÇÃO
+        debugPrint("Criando novo Host no Podio...");
+        final postUrl = Uri.parse(
+          "https://api.podio.com/item/app/${credenciais.appId}/",
+        );
+
+        final response = await http.post(
+          postUrl,
+          headers: headers,
+          body: payloadStr,
+        );
+        if (response.statusCode == 200) {
+          final newItemId = jsonDecode(response.body)['item_id'].toString();
+          debugPrint("Host criado com ID: $newItemId");
+          return newItemId;
+        } else {
+          throw Exception("Erro ao criar Host: ${response.body}");
+        }
+      }
+    } catch (e) {
+      debugPrint("Falha na sincronização do Host com o Podio: $e");
+      return null;
+    }
+  }
+
+  /// Deleta permanentemente o Host no Podio usando o item_id
+  Future<bool> deletarHostNoPodio(String podioItemId) async {
+    try {
+      final snapshot = await _credenciaisRef.get();
+      final credDoc = snapshot.docs.firstWhere(
+        (doc) => doc.data().appType == PodioAppType.larGlobal,
+      );
+      final accessToken = await _autenticarApp(credDoc.data());
+
+      final deleteUrl = Uri.parse("https://api.podio.com/item/$podioItemId");
+      final response = await http.delete(
+        deleteUrl,
+        headers: {"Authorization": "OAuth2 $accessToken"},
+      );
+
+      if (response.statusCode == 204) {
+        debugPrint("Host deletado do Podio com sucesso.");
+        return true;
+      } else {
+        throw Exception("Erro ao deletar: ${response.body}");
+      }
+    } catch (e) {
+      debugPrint("Falha ao deletar Host do Podio: $e");
+      return false;
+    }
+  }
+
+  /// Helper genérico de Autenticação na API para um App específico
+  Future<String> _autenticarApp(PodioCredentialsModel credenciais) async {
     final authUrl = Uri.parse("https://api.podio.com/oauth/token/v2");
-
-    debugPrint("Autenticando no Podio para acessar OPs...");
-
     final authResponse = await http.post(
       authUrl,
       headers: {
@@ -121,10 +210,20 @@ class PodioService {
     );
 
     if (authResponse.statusCode != 200) {
-      throw Exception("Erro Auth OPs: ${authResponse.body}");
+      throw Exception(
+        "Erro Auth App ${credenciais.appType?.nomePodio}: ${authResponse.body}",
+      );
     }
+    return jsonDecode(authResponse.body)['access_token'];
+  }
 
-    final accessToken = jsonDecode(authResponse.body)['access_token'];
+  // ==========================================================
+  // LÓGICA DAS OPORTUNIDADES E EPs (MANTIDAS INTACTAS)
+  // ==========================================================
+  Future<List<Oportunidade>> _buscarESalvarOportunidades(
+    PodioCredentialsModel credenciais,
+  ) async {
+    final accessToken = await _autenticarApp(credenciais);
 
     // Puxando até 500 OPs por vez
     final itemsUrl = Uri.parse(
@@ -171,15 +270,11 @@ class PodioService {
 
         final novaOp = Oportunidade.fromPodio(opData);
 
-        // Se o OP ID não existir, ignora este item para não quebrar o banco
         if (novaOp.opId.isEmpty || novaOp.opId == 'Não preenchido') {
-          debugPrint("Aviso: Oportunidade ignorada por estar sem OP ID.");
           continue;
         }
 
         opsList.add(novaOp);
-
-        // Salva no banco de dados (Upsert)
         await OportunidadeService.instance.salvarOportunidade(
           oportunidade: novaOp,
         );
@@ -187,39 +282,14 @@ class PodioService {
         debugPrint("Erro ao processar uma oportunidade específica: $e");
       }
     }
-
     return opsList;
   }
 
-  // ==========================================================
-  // LÓGICA DOS INTERCAMBISTAS (EPs)
-  // ==========================================================
   Future<void> _buscarESalvarIntercambistas(
     PodioCredentialsModel credenciais,
     List<Oportunidade> opsSalvas,
   ) async {
-    final authUrl = Uri.parse("https://api.podio.com/oauth/token/v2");
-
-    final authResponse = await http.post(
-      authUrl,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: jsonEncode({
-        "grant_type": "app",
-        "app_id": int.tryParse(credenciais.appId.toString()) ?? 0,
-        "app_token": credenciais.appToken,
-        "client_id": credenciais.clientId,
-        "client_secret": credenciais.clientSecret,
-      }),
-    );
-
-    if (authResponse.statusCode != 200) {
-      throw Exception("Erro Auth EPs: ${authResponse.body}");
-    }
-
-    final accessToken = jsonDecode(authResponse.body)['access_token'];
+    final accessToken = await _autenticarApp(credenciais);
 
     // Puxando até 500 EPs por vez
     final itemsUrl = Uri.parse(
@@ -253,9 +323,8 @@ class PodioService {
           'Entidade Abroad': _extrairValor(fields, "entidade-abroad", "app"),
         };
 
-        // CRUZAMENTO DE DADOS: Regras de Negócio de Hospedagem
         String opIdDoEp = epData['OP ID'] ?? '';
-        String statusDoEp = epData['Status'] ?? ''; // Puxa o status do EP
+        String statusDoEp = epData['Status'] ?? '';
         bool precisaHospedagem = false;
 
         if (opIdDoEp.isNotEmpty && opIdDoEp != 'Não preenchido') {
@@ -263,18 +332,14 @@ class PodioService {
 
           if (opMatch.isNotEmpty) {
             final opDoEp = opMatch.first;
-
             int semanas = opDoEp.duracaoTotal;
 
             bool programaCurto = semanas > 0 && semanas <= 12;
             bool ongNaoAcomoda =
                 opDoEp.financiamentoGv != 'Pela própria ONG com Lar Global';
-
-            // Nova regra: Valida se o status é Approved ou Realized
             bool statusPermiteHost =
                 statusDoEp == 'Approved' || statusDoEp == 'Realized';
 
-            // Só marca como true se cumprir todos os requisitos
             if (programaCurto && ongNaoAcomoda && statusPermiteHost) {
               precisaHospedagem = true;
             }
@@ -287,17 +352,96 @@ class PodioService {
         );
 
         if (novoEp.epId.isEmpty || novoEp.epId == 'Não preenchido') {
-          debugPrint("Aviso: EP ignorado por estar sem EP ID.");
           continue;
         }
 
-        // Salva/Atualiza no banco de dados (Upsert)
         await IntercambistaService.instance.salvarIntercambista(
           intercambista: novoEp,
         );
       } catch (e) {
         debugPrint("Erro ao processar um intercambista específico: $e");
       }
+    }
+  }
+
+  Future<String?> syncNpsNoPodio(NpsHost nps) async {
+    try {
+      final snapshot = await _credenciaisRef.get();
+      final credDoc = snapshot.docs.firstWhere(
+        (doc) => doc.data().appType == PodioAppType.nps,
+      );
+
+      final accessToken = await _autenticarApp(credDoc.data());
+      final postUrl = Uri.parse(
+        "https://api.podio.com/item/app/${credDoc.data().appId}/",
+      );
+
+      final headers = {
+        "Authorization": "OAuth2 $accessToken",
+        "Content-Type": "application/json",
+      };
+
+      final response = await http.post(
+        postUrl,
+        headers: headers,
+        body: jsonEncode(nps.toPodioPayload()),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['item_id'].toString();
+      } else {
+        throw Exception(response.body);
+      }
+    } catch (e) {
+      debugPrint("Falha na sincronização do NPS: $e");
+      return null;
+    }
+  }
+
+  /// Faz o upload de uma imagem por bytes para o Podio e retorna o ID gerado.
+  /// Compatível com Flutter Web e Mobile.
+  Future<int?> uploadArquivoNps({
+    required List<int> bytes,
+    required String fileName,
+  }) async {
+    try {
+      final snapshot = await _credenciaisRef.get();
+      final credDoc = snapshot.docs.firstWhere(
+        (doc) => doc.data().appType == PodioAppType.nps,
+      );
+
+      final accessToken = await _autenticarApp(credDoc.data());
+
+      final uploadUrl = Uri.parse("https://api.podio.com/file/v2/");
+      var request = http.MultipartRequest('POST', uploadUrl);
+
+      request.headers.addAll({"Authorization": "OAuth2 $accessToken"});
+
+      // NOVO: Garantia de que o arquivo sempre terá um nome válido (Extensão jpg por padrão)
+      final nomeSeguro = (fileName.trim().isEmpty || fileName == 'null')
+          ? 'foto_experiencia.jpg'
+          : fileName;
+
+      // NOVO: O Podio exige que o "filename" seja enviado como um campo de texto no form!
+      request.fields['filename'] = nomeSeguro;
+
+      request.files.add(
+        http.MultipartFile.fromBytes('source', bytes, filename: nomeSeguro),
+      );
+
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(responseData);
+        return jsonResponse['file_id'] as int;
+      } else {
+        debugPrint("Erro no upload da foto para o Podio: $responseData");
+        return null;
+      }
+    } catch (e) {
+      debugPrint("Falha na tentativa de enviar a foto para o Podio: $e");
+      return null;
     }
   }
 
@@ -311,7 +455,6 @@ class PodioService {
         if (valores != null && valores.isNotEmpty) {
           var item = valores[0];
 
-          // Tratamento especial para Datas
           if (tipo == 'date') {
             return item['start_date'] ?? item['start'] ?? 'Não informado';
           }
@@ -319,28 +462,19 @@ class PodioService {
           var valorPrincipal = item['value'];
           if (valorPrincipal == null) return "Não preenchido";
 
-          // Limpa tags de HTML caso o usuário tenha formatado no Podio
           if (tipo == 'text' || tipo == 'calculation') {
             return valorPrincipal.toString().replaceAll(RegExp(r'<[^>]*>'), '');
-          }
-          // Categorias (Tags)
-          else if (tipo == 'category') {
+          } else if (tipo == 'category') {
             return valorPrincipal['text']?.toString() ?? 'Não informado';
-          }
-          // Relacionamento com outros Apps
-          else if (tipo == 'app') {
+          } else if (tipo == 'app') {
             return valorPrincipal['title']?.toString() ??
                 'Referência sem título';
-          }
-          // Números (O Podio costuma enviar como "12.0000")
-          else if (tipo == 'number') {
+          } else if (tipo == 'number') {
             return double.tryParse(
                   valorPrincipal.toString(),
                 )?.toInt().toString() ??
                 '0';
-          }
-          // Fallback geral
-          else {
+          } else {
             return valorPrincipal.toString();
           }
         }

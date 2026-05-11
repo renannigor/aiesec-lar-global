@@ -4,10 +4,10 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:aiesec_lar_global/data/models/usuario/usuario.dart';
 import 'package:aiesec_lar_global/core/widgets/editor.dart';
 import 'package:aiesec_lar_global/core/widgets/selector.dart';
-import '../perfil_constantes.dart';
 
-// --- NOVOS IMPORTS PARA BUSCAR OS COMITÊS ---
-import 'package:aiesec_lar_global/data/models/comite_local/comite_local.dart';
+// --- IMPORT DAS CONSTANTES E COMITÊS ---
+import 'package:aiesec_lar_global/core/constants/form_constants.dart';
+import 'package:aiesec_lar_global/data/models/comite_local.dart';
 import 'package:aiesec_lar_global/data/services/comite_local_service.dart';
 
 class FormDadosPessoais extends StatefulWidget {
@@ -41,11 +41,9 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
   String? prefContato;
   String? comoConheceu;
 
-  // --- VARIÁVEIS DO COMITÊ ---
   List<ComiteLocal> _listaComites = [];
   bool _carregandoComites = true;
 
-  // --- MÁSCARAS ---
   final _cpfMaskFormatter = MaskTextInputFormatter(
     mask: '###.###.###-##',
     filter: {"#": RegExp(r'[0-9]')},
@@ -95,13 +93,11 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
     }
     dataNascController = TextEditingController(text: dataFormatada);
 
-    // Busca os comitês assim que a tela abre
     _buscarComitesLocais();
   }
 
   @override
   void dispose() {
-    // Boa prática: limpar os controllers ao fechar o widget
     nomeController.dispose();
     cpfController.dispose();
     rgController.dispose();
@@ -112,7 +108,6 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
     super.dispose();
   }
 
-  // --- FUNÇÃO PARA CARREGAR COMITÊS ---
   Future<void> _buscarComitesLocais() async {
     try {
       final comites = await ComiteLocalService.instance
@@ -127,9 +122,7 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
       }
     } catch (e) {
       debugPrint("Erro ao carregar comitês no Perfil: $e");
-      if (mounted) {
-        setState(() => _carregandoComites = false);
-      }
+      if (mounted) setState(() => _carregandoComites = false);
     }
   }
 
@@ -277,11 +270,10 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
                 },
               ),
         const SizedBox(height: 24),
-
         Selector(
           labelText: "Estado Civil",
           value: civil,
-          items: PerfilConstantes.estadoCivil,
+          items: FormConstants.estadoCivil,
           onChanged: (val) {
             setState(() => civil = val);
             _atualizar();
@@ -291,7 +283,7 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
         Selector(
           labelText: "Gênero",
           value: sexo,
-          items: PerfilConstantes.sexo,
+          items: FormConstants.sexo,
           onChanged: (val) {
             setState(() => sexo = val);
             _atualizar();
@@ -301,7 +293,7 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
         Selector(
           labelText: "Você possui alguma restrição alimentar?",
           value: restricao,
-          items: PerfilConstantes.restricaoAlimentar,
+          items: FormConstants.restricaoPropria,
           onChanged: (val) {
             setState(() => restricao = val);
             _atualizar();
@@ -311,7 +303,7 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
         Selector(
           labelText: "Como prefere ser contactado?",
           value: prefContato,
-          items: PerfilConstantes.formasContato,
+          items: FormConstants.contato,
           onChanged: (val) {
             setState(() => prefContato = val);
             _atualizar();
@@ -321,7 +313,7 @@ class _FormDadosPessoaisState extends State<FormDadosPessoais> {
         Selector(
           labelText: "Como conheceu a AIESEC?",
           value: comoConheceu,
-          items: PerfilConstantes.comoConheceu,
+          items: FormConstants.conheceuAiesec,
           onChanged: (val) {
             setState(() => comoConheceu = val);
             _atualizar();
