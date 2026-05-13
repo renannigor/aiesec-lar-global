@@ -362,7 +362,7 @@ class Usuario {
             "estado-civil": _mapCat(estadoCivil, FormConstants.estadoCivil),
             "profissao": profissao?.trim(),
             "aiesec-mais-proxima": _mapCat(
-              aiesecMaisProxima,
+              _limparNomeComite(aiesecMaisProxima),
               FormConstants.comites,
             ),
             "como-conheceu-a-aiesec": _mapCat(
@@ -467,6 +467,18 @@ class Usuario {
 // ===========================================================================
 // HELPERS (Privados do arquivo)
 // ===========================================================================
+
+String? _limparNomeComite(String? nomeCompleto) {
+  if (nomeCompleto == null) return null;
+  // Apaga o "AIESEC " + "em", "no", "na" ou "in" do começo da frase
+  return nomeCompleto
+      .replaceAll(
+        RegExp(r'^AIESEC\s+(em|no|na|in)\s+', caseSensitive: false),
+        '',
+      )
+      .trim()
+      .toUpperCase();
+}
 
 PerfilUsuario _perfilFromString(String? p) =>
     PerfilUsuario.values.firstWhere((e) => e.name == p);
